@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Students - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">All Students</span>
+        <button class="btn btn-primary btn-sm" onclick="showAssignModal()">Assign Teacher</button>
+      </div>
+      <div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Joined</th></tr></thead><tbody id="studentsList"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div id="assignModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)hideAssignModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Assign Teacher to Student</h3>
+    <div class="form-group"><label class="form-label">Student</label><select class="form-input" id="assignStudent"></select></div>
+    <div class="form-group"><label class="form-label">Teacher</label><select class="form-input" id="assignTeacher"></select></div>
+    <div id="assignMsg" style="color:#2b8a3e;font-size:13px;margin-bottom:8px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="hideAssignModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="handleAssign()">Assign</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'admin') redirectByRole(user.role);
+renderPage('Students');
+
+async function loadStudents() {
+  const students = await get('/api/admin/students');
+  const tbody = document.getElementById('studentsList');
+  if (students.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state" style="padding:32px"><p>No students registered</p></td></tr>';
+  } else {
+    tbody.innerHTML = students.map(s => `
+      <tr><td>${s.full_name}</td><td>${s.email}</td><td style="color:var(--gray-400);font-size:13px">${new Date(s.created_at).toLocaleDateString()}</td></tr>
+    `).join('');
+  }
+}
+
+async function showAssignModal() {
+  document.getElementById('assignModal').style.display = 'flex';
+  document.getElementById('assignMsg').style.display = 'none';
+
+  const [students, teachers] = await Promise.all([get('/api/admin/students'), get('/api/admin/teachers')]);
+  const sSel = document.getElementById('assignStudent');
+  const tSel = document.getElementById('assignTeacher');
+  sSel.innerHTML = students.map(s => `<option value="${s.id}">${s.full_name} (${s.email})</option>`).join('');
+  tSel.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+}
+
+function hideAssignModal() { document.getElementById('assignModal').style.display = 'none'; }
+
+async function handleAssign() {
+  const student_id = document.getElementById('assignStudent').value;
+  const teacher_id = document.getElementById('assignTeacher').value;
+  const msg = document.getElementById('assignMsg');
+  try {
+    await post('/api/admin/assign', { student_id, teacher_id });
+    msg.textContent = 'Assigned successfully!';
+    msg.style.color = '#2b8a3e';
+    msg.style.display = 'block';
+    setTimeout(hideAssignModal, 1000);
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c92a2a';
+    msg.style.display = 'block';
+  }
+}
+
+loadStudents();
+</script>
+</body>
+</html>

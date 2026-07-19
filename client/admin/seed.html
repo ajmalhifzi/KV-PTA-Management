@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seed Data - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="card" style="max-width:600px">
+      <h3 style="font-size:16px;font-weight:700;color:var(--dark-blue-800);margin-bottom:12px">Seed Old FYP Data</h3>
+      <p style="font-size:13px;color:var(--gray-500);margin-bottom:16px">Paste JSON array of old FYP records below. This data is used for AI idea recommendations.</p>
+      <div class="form-group">
+        <label class="form-label">JSON Data</label>
+        <textarea class="form-input" id="seedData" rows="10" style="font-family:monospace;font-size:12px" placeholder='[{"title":"...","objective":"...","purpose":"...","scope":"...","keywords":["..."]}]'></textarea>
+      </div>
+      <div id="seedMsg" style="font-size:13px;margin-bottom:12px;display:none"></div>
+      <button class="btn btn-primary" onclick="handleSeed()">Seed Data</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'admin') redirectByRole(user.role);
+renderPage('Seed Data');
+
+async function handleSeed() {
+  const msg = document.getElementById('seedMsg');
+  try {
+    const data = JSON.parse(document.getElementById('seedData').value);
+    if (!Array.isArray(data)) throw new Error('Must be a JSON array');
+    const result = await post('/api/admin/seed-fyp', { data });
+    msg.textContent = result.message;
+    msg.style.color = '#2b8a3e';
+    msg.style.display = 'block';
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c92a2a';
+    msg.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

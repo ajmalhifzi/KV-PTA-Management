@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Project - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div id="projectView" style="display:none">
+      <div class="card" style="margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;margin-bottom:16px">
+          <div><h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)" id="projTitle"></h2><p style="font-size:13px;color:var(--gray-500)" id="projStatus"></p></div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="showEdit()">Edit</button>
+            <button class="btn btn-primary btn-sm" id="submitBtn" onclick="submitProject()">Submit for Review</button>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+          <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Objective</div><div style="font-size:14px" id="projObjective"></div></div>
+          <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Purpose</div><div style="font-size:14px" id="projPurpose"></div></div>
+          <div style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Scope</div><div style="font-size:14px" id="projScope"></div></div>
+        </div>
+      </div>
+      <div class="card" id="teacherInfo" style="margin-bottom:16px;display:none"></div>
+    </div>
+
+    <div id="editForm" style="display:none">
+      <div class="card" style="max-width:600px">
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark-blue-800);margin-bottom:16px">Edit Project Idea</h3>
+        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="editTitle"></div>
+        <div class="form-group"><label class="form-label">Objective</label><textarea class="form-input" id="editObjective" rows="2"></textarea></div>
+        <div class="form-group"><label class="form-label">Purpose</label><textarea class="form-input" id="editPurpose" rows="2"></textarea></div>
+        <div class="form-group"><label class="form-label">Scope</label><textarea class="form-input" id="editScope" rows="2"></textarea></div>
+        <div id="editMsg" style="font-size:13px;margin-bottom:12px;display:none"></div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="saveProject()">Save</button>
+          <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="noProject" style="display:none">
+      <div class="card" style="max-width:600px;text-align:center;padding:48px">
+        <p style="font-size:16px;font-weight:600;color:var(--dark-blue-800);margin-bottom:8px">No Project Yet</p>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:20px">Submit your FYP idea to get started.</p>
+        <button class="btn btn-primary" onclick="showNewForm()">Create Project</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'student') redirectByRole(user.role);
+renderPage('My Project');
+
+async function load() {
+  try {
+    const project = await get('/api/student/project');
+    document.getElementById('projectView').style.display = 'block';
+    document.getElementById('noProject').style.display = 'none';
+    document.getElementById('projTitle').textContent = project.title;
+    document.getElementById('projObjective').textContent = project.objective;
+    document.getElementById('projPurpose').textContent = project.purpose;
+    document.getElementById('projScope').textContent = project.scope;
+    document.getElementById('projStatus').innerHTML = `Status: <span class="badge ${project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray'}">${project.status}</span>`;
+    document.getElementById('submitBtn').style.display = project.status === 'draft' ? 'inline-flex' : 'none';
+
+    try {
+      const teacher = await get('/api/student/teacher');
+      document.getElementById('teacherInfo').style.display = 'block';
+      document.getElementById('teacherInfo').innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Assigned Teacher</div><div style="font-size:14px;font-weight:600;color:var(--dark-blue-700)">${teacher.full_name}</div>`;
+    } catch { document.getElementById('teacherInfo').style.display = 'none'; }
+  } catch {
+    document.getElementById('projectView').style.display = 'none';
+    document.getElementById('noProject').style.display = 'block';
+  }
+}
+
+function showNewForm() {
+  document.getElementById('noProject').style.display = 'none';
+  document.getElementById('editForm').style.display = 'block';
+  document.getElementById('editTitle').value = '';
+  document.getElementById('editObjective').value = '';
+  document.getElementById('editPurpose').value = '';
+  document.getElementById('editScope').value = '';
+}
+
+function showEdit() {
+  document.getElementById('projectView').style.display = 'none';
+  document.getElementById('editForm').style.display = 'block';
+  document.getElementById('editTitle').value = document.getElementById('projTitle').textContent;
+  document.getElementById('editObjective').value = document.getElementById('projObjective').textContent;
+  document.getElementById('editPurpose').value = document.getElementById('projPurpose').textContent;
+  document.getElementById('editScope').value = document.getElementById('projScope').textContent;
+}
+
+function cancelEdit() { location.reload(); }
+
+async function saveProject() {
+  const body = {
+    title: document.getElementById('editTitle').value,
+    objective: document.getElementById('editObjective').value,
+    purpose: document.getElementById('editPurpose').value,
+    scope: document.getElementById('editScope').value,
+  };
+  try {
+    await put('/api/student/project', body);
+    location.reload();
+  } catch (e) { alert(e.message); }
+}
+
+async function submitProject() {
+  try {
+    await post('/api/student/project/submit');
+    location.reload();
+  } catch (e) { alert(e.message); }
+}
+
+load();
+</script>
+</body>
+</html>

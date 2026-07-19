@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="login-page">
+  <div class="login-card">
+    <h1>KV PTA Management</h1>
+    <p>Final Year Project Supervision Platform</p>
+
+    <div id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="email" type="email" placeholder="you@example.com" autocomplete="email">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="password" type="password" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <div id="errorMsg" style="color:#c92a2a;font-size:13px;margin-bottom:12px;display:none"></div>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="handleLogin()">Sign in</button>
+      <p style="margin-top:16px;font-size:13px;text-align:center;color:var(--gray-500)">
+        Don't have an account? <a href="/register.html" style="color:var(--dark-blue-600);font-weight:600;text-decoration:none">Register</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+const user = getUser();
+if (user) { redirectByRole(user.role); }
+
+async function handleLogin() {
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('password').value;
+  const err = document.getElementById('errorMsg');
+
+  if (!email || !password) { err.textContent = 'Please fill in all fields'; err.style.display = 'block'; return; }
+
+  try {
+    const data = await post('/api/auth/login', { email, password });
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('user', JSON.stringify(data.user));
+    redirectByRole(data.user.role);
+  } catch (e) {
+    err.textContent = e.message;
+    err.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

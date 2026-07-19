@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Uploads - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="card" style="padding:0;margin-bottom:16px">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Upload File</div>
+      <div style="padding:20px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <input class="form-input" id="fileName" placeholder="File name" style="flex:1;min-width:200px">
+          <input class="form-input" id="fileUrl" placeholder="File URL (base64 or link)" style="flex:2;min-width:300px">
+          <select class="form-input" id="fileCategory" style="width:160px">
+            <option value="supplementary">Supplementary</option>
+            <option value="formal">Formal Document</option>
+          </select>
+          <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
+        </div>
+        <div id="uploadMsg" style="font-size:13px;margin-top:8px;display:none"></div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">My Uploads</div>
+      <div class="table-container"><table><thead><tr><th>File</th><th>Category</th><th>Uploaded</th></tr></thead><tbody id="uploadsList"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'student') redirectByRole(user.role);
+renderPage('Uploads');
+
+async function load() {
+  const uploads = await get('/api/student/uploads');
+  const tbody = document.getElementById('uploadsList');
+  if (uploads.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="3" class="empty-state" style="padding:32px"><p>No files uploaded</p></td></tr>';
+  } else {
+    tbody.innerHTML = uploads.map(u => `
+      <tr><td><a href="${u.file_url}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${u.file_name}</a></td><td><span class="badge ${u.category === 'formal' ? 'badge-blue' : 'badge-gray'}">${u.category}</span></td><td style="color:var(--gray-400);font-size:13px">${new Date(u.uploaded_at).toLocaleDateString()}</td></tr>
+    `).join('');
+  }
+}
+
+async function uploadFile() {
+  const file_name = document.getElementById('fileName').value;
+  const file_url = document.getElementById('fileUrl').value;
+  const category = document.getElementById('fileCategory').value;
+  const msg = document.getElementById('uploadMsg');
+  if (!file_name || !file_url) { msg.textContent = 'Name and URL required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  try {
+    await post('/api/student/uploads', { file_name, file_url, category });
+    document.getElementById('fileName').value = '';
+    document.getElementById('fileUrl').value = '';
+    msg.textContent = 'File uploaded!';
+    msg.style.color = '#2b8a3e';
+    msg.style.display = 'block';
+    load();
+    setTimeout(() => msg.style.display = 'none', 2000);
+  } catch (e) { msg.textContent = e.message; msg.style.color = '#c92a2a'; msg.style.display = 'block'; }
+}
+
+load();
+</script>
+</body>
+</html>

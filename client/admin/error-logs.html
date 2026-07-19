@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Error Logs - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">System Error Logs</div>
+      <div class="table-container"><table><thead><tr><th>Level</th><th>Message</th><th>Route</th><th>Time</th></tr></thead><tbody id="logsList"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'admin') redirectByRole(user.role);
+renderPage('Error Logs');
+
+async function load() {
+  const logs = await get('/api/admin/error-logs');
+  const tbody = document.getElementById('logsList');
+  if (logs.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="padding:32px"><p>No errors logged</p></td></tr>';
+  } else {
+    tbody.innerHTML = logs.map(l => `
+      <tr>
+        <td><span class="badge ${l.level === 'error' ? 'badge-red' : l.level === 'warn' ? 'badge-yellow' : 'badge-blue'}">${l.level}</span></td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.message}</td>
+        <td style="color:var(--gray-400);font-size:13px">${l.route || '-'}</td>
+        <td style="color:var(--gray-400);font-size:13px">${new Date(l.created_at).toLocaleString()}</td>
+      </tr>
+    `).join('');
+  }
+}
+load();
+</script>
+</body>
+</html>

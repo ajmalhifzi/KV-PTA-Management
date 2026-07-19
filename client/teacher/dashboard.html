@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="stat-grid" id="statCards"></div>
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">My Students</div>
+      <div class="table-container"><table><thead><tr><th>Student</th><th>Project</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="studentsList"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'teacher') redirectByRole(user.role);
+renderPage('Dashboard');
+
+const STATUS_BADGE = { draft: 'badge-gray', submitted: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', revision: 'badge-yellow' };
+
+async function load() {
+  const students = await get('/api/teacher/students');
+  const stats = { total: students.length, pending: 0, approved: 0, rejected: 0 };
+  students.forEach(s => {
+    if (s.status === 'submitted' || s.status === 'revision') stats.pending++;
+    else if (s.status === 'approved') stats.approved++;
+    else if (s.status === 'rejected') stats.rejected++;
+  });
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="card stat-card"><div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-number">${stats.total}</div><div class="stat-label">Students</div></div></div>
+    <div class="card stat-card"><div class="stat-icon yellow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></div><div><div class="stat-number">${stats.pending}</div><div class="stat-label">Pending Review</div></div></div>
+    <div class="card stat-card"><div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-number">${stats.approved}</div><div class="stat-label">Approved</div></div></div>
+    <div class="card stat-card"><div class="stat-icon red"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div><div><div class="stat-number">${stats.rejected}</div><div class="stat-label">Rejected</div></div></div>
+  `;
+
+  const tbody = document.getElementById('studentsList');
+  if (students.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No students assigned to you yet</p></td></tr>';
+  } else {
+    tbody.innerHTML = students.map(s => `
+      <tr>
+        <td>${s.full_name}</td>
+        <td>${s.title || '<span style="color:var(--gray-400)">Not submitted</span>'}</td>
+        <td><span class="badge ${STATUS_BADGE[s.status] || 'badge-gray'}">${s.status || 'no project'}</span></td>
+        <td style="color:var(--gray-400);font-size:13px">${s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : '-'}</td>
+        <td>
+          ${s.project_id ? `
+            <button class="btn btn-soft btn-sm" onclick="viewProject('${s.project_id}')">View</button>
+            <button class="btn btn-primary btn-sm" onclick="updateStatus('${s.project_id}','approved')" style="margin-left:4px">Approve</button>
+            <button class="btn btn-secondary btn-sm" onclick="updateStatus('${s.project_id}','revision')" style="margin-left:4px">Revise</button>
+          ` : '-'}
+        </td>
+      </tr>
+    `).join('');
+  }
+}
+
+async function viewProject(id) {
+  localStorage.setItem('viewProjectId', id);
+  window.location.href = '/teacher/project-detail.html';
+}
+
+async function updateStatus(id, status) {
+  try {
+    await patch(`/api/teacher/projects/${id}/status`, { status });
+    location.reload();
+  } catch (e) { alert(e.message); }
+}
+
+load();
+</script>
+</body>
+</html>
