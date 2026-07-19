@@ -6,3 +6,6 @@ node_modules/
 dist/
 .next/
 *.cache/
+.vercel/
+.vercel
+.env*
