@@ -1,13 +1,8 @@
 if (process.env.NODE_ENV !== 'production') require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
-const express = require('express');
-const { Pool } = require('pg');
-const cors = require('cors');
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  family: 4
-});
+const express = require('express');
+const cors = require('cors');
+const pool = require('./db');
 
 const app = express();
 
@@ -27,5 +22,10 @@ app.get('/api/health', async (req, res) => {
     res.status(503).json({ status: 'error', db: 'disconnected' });
   }
 });
+
+app.use('/api/auth', require('./routes/auth'));
+app.use('/api/admin', require('./routes/admin'));
+app.use('/api/teacher', require('./routes/teacher'));
+app.use('/api/student', require('./routes/student'));
 
 module.exports = app;

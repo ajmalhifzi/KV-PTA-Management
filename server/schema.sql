@@ -23,7 +23,7 @@ CREATE TABLE teacher_student_assignments (
 -- 3. Projects (student FYP)
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  student_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL DEFAULT '',
   objective TEXT NOT NULL DEFAULT '',
   purpose TEXT NOT NULL DEFAULT '',
