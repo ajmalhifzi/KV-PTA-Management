@@ -34,7 +34,7 @@ app.use('/api/student', require('./routes/student'));
 
 app.use(express.static(clientPath));
 
-app.get('*', (req, res) => {
+app.get('/{*path}', (req, res) => {
   const filePath = path.join(clientPath, req.path === '/' ? 'index.html' : req.path);
   if (fs.existsSync(filePath)) return res.sendFile(filePath);
   res.sendFile(path.join(clientPath, 'index.html'));
