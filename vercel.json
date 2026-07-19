@@ -1,7 +1,8 @@
 {
-  "buildCommand": null,
-  "outputDirectory": "client",
   "functions": {
     "api/index.js": { "maxDuration": 30 }
-  }
+  },
+  "routes": [
+    { "src": "/(.*)", "dest": "api/index.js" }
+  ]
 }
