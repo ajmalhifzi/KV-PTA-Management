@@ -71,28 +71,42 @@ async function uploadFile() {
     msg.textContent = 'File too large. Max 25MB.';
     msg.style.color = '#c92a2a'; msg.style.display = 'block'; return;
   }
+
   const file_name = fileNameInput.value || file.name;
+  msg.textContent = 'Uploading...';
+  msg.style.color = '#2b8a3e'; msg.style.display = 'block';
 
   try {
-    const reader = new FileReader();
-    reader.onload = async function(e) {
-      const base64 = e.target.result.split(',')[1];
-      try {
-        await post('/api/student/uploads', { file_name, file_data: base64, category });
-        fileInput.value = '';
-        fileNameInput.value = '';
-        msg.textContent = 'File uploaded!';
-        msg.style.color = '#2b8a3e'; msg.style.display = 'block';
-        load();
-        setTimeout(() => msg.style.display = 'none', 2000);
-      } catch (err) {
-        msg.textContent = err.message;
-        msg.style.color = '#c92a2a'; msg.style.display = 'block';
-      }
-    };
-    reader.readAsDataURL(file);
-  } catch (e) {
-    msg.textContent = e.message;
+    const config = await getSupabaseConfig();
+    const safeName = sanitizeFileName(file_name);
+    const buffer = await file.arrayBuffer();
+
+    const res = await fetch(config.supabaseUrl + '/storage/v1/object/fyp-files/' + safeName, {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + config.supabaseAnonKey,
+        'apikey': config.supabaseAnonKey,
+        'Content-Type': 'application/octet-stream',
+      },
+      body: buffer,
+    });
+
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText.slice(0, 200));
+    }
+
+    const file_url = config.supabaseUrl + '/storage/v1/object/public/fyp-files/' + safeName;
+    await post('/api/student/uploads', { file_name, file_url, category });
+
+    fileInput.value = '';
+    fileNameInput.value = '';
+    msg.textContent = 'File uploaded!';
+    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+    load();
+    setTimeout(() => msg.style.display = 'none', 2000);
+  } catch (err) {
+    msg.textContent = err.message;
     msg.style.color = '#c92a2a'; msg.style.display = 'block';
   }
 }

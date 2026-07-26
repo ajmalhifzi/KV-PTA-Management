@@ -18,6 +18,13 @@ app.options('/{*path}', (req, res) => {
   res.sendStatus(204);
 });
 
+app.get('/api/config/public', (req, res) => {
+  res.json({
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  });
+});
+
 app.get('/api/health', async (req, res) => {
   try {
     await pool.query('SELECT 1');

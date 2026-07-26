@@ -22,3 +22,13 @@ function get(path) { return api(path); }
 function post(path, body) { return api(path, { method: 'POST', body: JSON.stringify(body) }); }
 function put(path, body) { return api(path, { method: 'PUT', body: JSON.stringify(body) }); }
 function patch(path, body) { return api(path, { method: 'PATCH', body: JSON.stringify(body) }); }
+
+let _supabaseConfig = null;
+async function getSupabaseConfig() {
+  if (!_supabaseConfig) _supabaseConfig = await api('/api/config/public');
+  return _supabaseConfig;
+}
+
+function sanitizeFileName(name) {
+  return Date.now() + '_' + name.replace(/[^a-zA-Z0-9._-]/g, '_');
+}
