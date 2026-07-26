@@ -17,7 +17,7 @@
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <input class="form-input" id="fileName" placeholder="File name" style="flex:1;min-width:200px">
-          <input type="file" id="fileInput" style="flex:2;min-width:300px;padding:6px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:300px;padding:6px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px">
           <select class="form-input" id="fileCategory" style="width:160px">
             <option value="supplementary">Supplementary</option>
             <option value="formal">Formal Document</option>
@@ -67,6 +67,10 @@ async function uploadFile() {
   }
 
   const file = fileInput.files[0];
+  if (file.size > 25 * 1024 * 1024) {
+    msg.textContent = 'File too large. Max 25MB.';
+    msg.style.color = '#c92a2a'; msg.style.display = 'block'; return;
+  }
   const file_name = fileNameInput.value || file.name;
 
   try {

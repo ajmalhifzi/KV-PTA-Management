@@ -1,3 +1,5 @@
+const pool = require('./db');
+
 async function uploadToSupabase(fileName, fileData) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
@@ -13,6 +15,10 @@ async function uploadToSupabase(fileName, fileData) {
 
   if (!res.ok) {
     const errText = await res.text();
+    await pool.query(
+      'INSERT INTO error_logs (level, message, route) VALUES ($1, $2, $3)',
+      ['error', `Storage upload failed for ${fileName}: ${errText}`, 'storage.js']
+    ).catch(() => {});
     throw new Error(`Storage upload failed: ${errText}`);
   }
 
