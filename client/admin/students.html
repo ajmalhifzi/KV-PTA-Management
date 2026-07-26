@@ -17,7 +17,7 @@
         <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">All Students</span>
         <a class="btn btn-primary btn-sm" href="/admin/groups.html">Manage Groups</a>
       </div>
-      <div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Group</th><th>Joined</th></tr></thead><tbody id="studentsList"></tbody></table></div>
+      <div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Group</th><th>Teacher</th><th>Joined</th></tr></thead><tbody id="studentsList"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -31,22 +31,18 @@ if (user.role !== 'admin') redirectByRole(user.role);
 renderPage('Students');
 
 async function load() {
-  const [students, groups] = await Promise.all([
-    get('/api/admin/students'),
-    get('/api/admin/groups'),
-  ]);
-  const groupMap = {};
-  groups.forEach(g => { groupMap[g.id] = g.group_name; });
+  const students = await get('/api/admin/students');
 
   const tbody = document.getElementById('studentsList');
   if (students.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4" class="empty-state" style="padding:32px"><p>No students registered</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No students registered</p></td></tr>';
   } else {
     tbody.innerHTML = students.map(s => `
       <tr>
         <td>${s.full_name}</td>
         <td>${s.email}</td>
-        <td>${s.group_id ? '<span class="badge badge-blue">' + (groupMap[s.group_id] || 'Unknown') + '</span>' : '<span class="badge badge-gray">Unassigned</span>'}</td>
+        <td>${s.group_id ? '<span class="badge badge-blue">' + s.group_name + '</span>' : '<span class="badge badge-gray">Unassigned</span>'}</td>
+        <td>${s.teacher_name || '<span style="color:var(--gray-400)">-</span>'}</td>
         <td style="color:var(--gray-400);font-size:13px">${new Date(s.created_at).toLocaleDateString()}</td>
       </tr>
     `).join('');

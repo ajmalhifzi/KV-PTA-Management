@@ -23,9 +23,12 @@ router.get('/teachers', async (req, res) => {
 
 router.get('/students', async (req, res) => {
   const { rows } = await pool.query(`
-    SELECT u.id, u.email, u.full_name, u.created_at, tsa.group_id
+    SELECT u.id, u.email, u.full_name, u.created_at,
+           tsa.group_id, g.group_name, t.full_name AS teacher_name
     FROM users u
     LEFT JOIN teacher_student_assignments tsa ON tsa.student_id = u.id
+    LEFT JOIN groups g ON g.id = tsa.group_id
+    LEFT JOIN users t ON t.id = g.teacher_id
     WHERE u.role = 'student'
     ORDER BY u.full_name
   `);
@@ -121,10 +124,16 @@ router.get('/groups', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT g.id, g.group_name, g.teacher_id, g.created_at,
            u.full_name AS teacher_name,
-           COUNT(tsa.student_id)::int AS student_count
+           COUNT(tsa.student_id)::int AS student_count,
+           COALESCE(
+             json_agg(json_build_object('id', s.id, 'full_name', s.full_name, 'email', s.email))
+             FILTER (WHERE s.id IS NOT NULL),
+             '[]'
+           ) AS students
     FROM groups g
     JOIN users u ON u.id = g.teacher_id
     LEFT JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN users s ON s.id = tsa.student_id
     GROUP BY g.id, g.group_name, g.teacher_id, g.created_at, u.full_name
     ORDER BY g.created_at DESC
   `);
