@@ -31,6 +31,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/layout.js"></script>
@@ -71,22 +72,18 @@ async function uploadResource() {
   try {
     const config = await getSupabaseConfig();
     const safeName = sanitizeFileName(title);
-    const buffer = await file.arrayBuffer();
-
-    const res = await fetch(config.supabaseUrl + '/storage/v1/object/fyp-files/' + safeName, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + config.supabaseAnonKey,
-        'apikey': config.supabaseAnonKey,
-        'Content-Type': 'application/octet-stream',
-      },
-      body: buffer,
+    const supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
+      auth: { persistSession: false },
     });
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(errText.slice(0, 200));
-    }
+    const { data, error } = await supabase.storage
+      .from('fyp-files')
+      .upload(safeName, file, {
+        contentType: file.type || 'application/octet-stream',
+        upsert: true,
+      });
+
+    if (error) throw new Error(error.message);
 
     const file_url = config.supabaseUrl + '/storage/v1/object/public/fyp-files/' + safeName;
     await post('/api/teacher/resources', { title, file_url, file_type: file.type });
