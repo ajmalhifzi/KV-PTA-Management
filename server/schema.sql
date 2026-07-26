@@ -11,19 +11,29 @@ CREATE TABLE users (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 2. Teacher-Student assignments (admin-manual)
+-- 2. Groups (student groups assigned to a teacher)
+CREATE TABLE groups (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  group_name VARCHAR(255) NOT NULL,
+  teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- 3. Teacher-Student assignments (admin-manual, with group support)
 CREATE TABLE teacher_student_assignments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE(student_id)
 );
 
--- 3. Projects (student FYP)
+-- 4. Projects (student FYP, linked via student or group)
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   student_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
   title VARCHAR(255) NOT NULL DEFAULT '',
   objective TEXT NOT NULL DEFAULT '',
   purpose TEXT NOT NULL DEFAULT '',
@@ -36,7 +46,7 @@ CREATE TABLE projects (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 4. Comments (teacher-student thread per project)
+-- 5. Comments (teacher-student thread per project)
 CREATE TABLE comments (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -45,7 +55,7 @@ CREATE TABLE comments (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 5. Resource files (teacher uploads for assigned students)
+-- 6. Resource files (teacher uploads for assigned students)
 CREATE TABLE resource_files (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -55,7 +65,7 @@ CREATE TABLE resource_files (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 6. Project uploads (student files — formal docs + supplementary)
+-- 7. Project uploads (student files — formal docs + supplementary)
 CREATE TABLE project_uploads (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -66,7 +76,7 @@ CREATE TABLE project_uploads (
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 7. Error logs (admin-only monitoring)
+-- 8. Error logs (admin-only monitoring)
 CREATE TABLE error_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   level VARCHAR(20) NOT NULL DEFAULT 'error',
@@ -76,7 +86,7 @@ CREATE TABLE error_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 8. Old FYP data (seeded mock data for AI idea recommendations)
+-- 9. Old FYP data (seeded mock data for AI idea recommendations)
 CREATE TABLE old_fyp_data (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title VARCHAR(255) NOT NULL,
@@ -89,6 +99,7 @@ CREATE TABLE old_fyp_data (
 );
 
 -- Indexes
+CREATE INDEX idx_groups_teacher_id ON groups(teacher_id);
 CREATE INDEX idx_projects_student_id ON projects(student_id);
 CREATE INDEX idx_projects_status ON projects(status);
 CREATE INDEX idx_comments_project_id ON comments(project_id);

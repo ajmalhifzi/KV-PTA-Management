@@ -2,6 +2,7 @@ const NAV = {
   admin: [
     { label: 'Overview', icon: 'grid', href: '/admin/dashboard.html' },
     { label: 'Users', icon: 'users', href: '/admin/users.html' },
+    { label: 'Groups', icon: 'users', href: '/admin/groups.html' },
     { label: 'Teachers', icon: 'book-open', href: '/admin/teachers.html' },
     { label: 'Students', icon: 'book-open', href: '/admin/students.html' },
     { label: 'Files', icon: 'upload', href: '/admin/files.html' },

@@ -22,9 +22,13 @@ router.get('/teachers', async (req, res) => {
 });
 
 router.get('/students', async (req, res) => {
-  const { rows } = await pool.query(
-    "SELECT id, email, full_name, created_at FROM users WHERE role = 'student' ORDER BY full_name"
-  );
+  const { rows } = await pool.query(`
+    SELECT u.id, u.email, u.full_name, u.created_at, tsa.group_id
+    FROM users u
+    LEFT JOIN teacher_student_assignments tsa ON tsa.student_id = u.id
+    WHERE u.role = 'student'
+    ORDER BY u.full_name
+  `);
   res.json(rows);
 });
 
@@ -113,8 +117,92 @@ router.post('/assign-bulk', async (req, res) => {
   }
 });
 
+router.get('/groups', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT g.id, g.group_name, g.teacher_id, g.created_at,
+           u.full_name AS teacher_name,
+           COUNT(tsa.student_id)::int AS student_count
+    FROM groups g
+    JOIN users u ON u.id = g.teacher_id
+    LEFT JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    GROUP BY g.id, g.group_name, g.teacher_id, g.created_at, u.full_name
+    ORDER BY g.created_at DESC
+  `);
+  res.json(rows);
+});
+
+router.post('/groups', async (req, res) => {
+  const { group_name, teacher_id } = req.body;
+  if (!group_name || !teacher_id)
+    return res.status(400).json({ error: 'group_name and teacher_id required' });
+
+  const { rows } = await pool.query(
+    'INSERT INTO groups (group_name, teacher_id) VALUES ($1, $2) RETURNING *',
+    [group_name, teacher_id]
+  );
+  res.status(201).json(rows[0]);
+});
+
+router.delete('/groups/:id', async (req, res) => {
+  const { id } = req.params;
+  const { rowCount } = await pool.query('DELETE FROM groups WHERE id = $1', [id]);
+  if (!rowCount) return res.status(404).json({ error: 'Group not found' });
+  res.json({ message: 'Group deleted' });
+});
+
+router.get('/groups/:id/students', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT u.id, u.email, u.full_name
+    FROM teacher_student_assignments tsa
+    JOIN users u ON u.id = tsa.student_id
+    WHERE tsa.group_id = $1
+    ORDER BY u.full_name
+  `, [req.params.id]);
+  res.json(rows);
+});
+
+router.post('/groups/:id/students', async (req, res) => {
+  const { id } = req.params;
+  const { student_ids } = req.body;
+  if (!Array.isArray(student_ids))
+    return res.status(400).json({ error: 'student_ids array required' });
+
+  const group = await pool.query('SELECT * FROM groups WHERE id = $1', [id]);
+  if (!group.rows.length) return res.status(404).json({ error: 'Group not found' });
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    // Remove students from this group
+    await client.query('UPDATE teacher_student_assignments SET group_id = NULL WHERE group_id = $1', [id]);
+    // Clear group_id from their projects
+    await client.query("UPDATE projects SET group_id = NULL WHERE group_id = $1 AND status = 'draft'", [id]);
+    // Add new students
+    for (const student_id of student_ids) {
+      await client.query(
+        `INSERT INTO teacher_student_assignments (teacher_id, student_id, group_id)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (student_id) DO UPDATE SET teacher_id = $1, group_id = $3`,
+        [group.rows[0].teacher_id, student_id, id]
+      );
+      // Assign project to group if exists
+      await client.query(
+        'UPDATE projects SET group_id = $1 WHERE student_id = $2 RETURNING id',
+        [id, student_id]
+      );
+    }
+    await client.query('COMMIT');
+    res.json({ message: `${student_ids.length} students assigned to group` });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    res.status(500).json({ error: 'Failed to assign students' });
+  } finally {
+    client.release();
+  }
+});
+
 router.get('/overview', async (req, res) => {
-  const [users, projects, teachers] = await Promise.all([
+  const [users, projects, teachers, groups] = await Promise.all([
     pool.query("SELECT role, COUNT(*)::int FROM users GROUP BY role"),
     pool.query("SELECT status, COUNT(*)::int FROM projects GROUP BY status"),
     pool.query(`
@@ -125,11 +213,13 @@ router.get('/overview', async (req, res) => {
       GROUP BY u.id, u.full_name
       ORDER BY u.full_name
     `),
+    pool.query("SELECT COUNT(*)::int FROM groups"),
   ]);
   res.json({
     user_stats: users.rows,
     project_stats: projects.rows,
     teachers: teachers.rows,
+    group_count: groups.rows[0].count,
   });
 });
 

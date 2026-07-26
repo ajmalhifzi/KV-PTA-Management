@@ -6,12 +6,35 @@ const { uploadToSupabase, sanitizeFileName } = require('../storage');
 const router = Router();
 router.use(authenticate, authorize('teacher'));
 
+router.get('/groups', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT g.id, g.group_name, g.created_at,
+           COALESCE(json_agg(
+             json_build_object(
+               'student_id', u.id, 'email', u.email, 'full_name', u.full_name,
+               'project_id', p.id, 'title', p.title, 'status', p.status,
+               'submitted_at', p.submitted_at, 'updated_at', p.updated_at
+             )
+             ORDER BY u.full_name
+           ) FILTER (WHERE u.id IS NOT NULL), '[]') AS students
+    FROM groups g
+    LEFT JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN users u ON u.id = tsa.student_id
+    LEFT JOIN projects p ON p.student_id = u.id
+    WHERE g.teacher_id = $1
+    GROUP BY g.id, g.group_name, g.created_at
+    ORDER BY g.created_at DESC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
 router.get('/students', async (req, res) => {
   const { rows } = await pool.query(`
-    SELECT u.id AS student_id, p.id AS project_id, u.email, u.full_name, p.title, p.status, p.submitted_at, p.updated_at
+    SELECT u.id AS student_id, p.id AS project_id, u.email, u.full_name, p.title, p.status, p.submitted_at, p.updated_at, g.id AS group_id, g.group_name
     FROM teacher_student_assignments tsa
     JOIN users u ON u.id = tsa.student_id
     LEFT JOIN projects p ON p.student_id = u.id
+    LEFT JOIN groups g ON g.id = tsa.group_id
     WHERE tsa.teacher_id = $1
     ORDER BY u.full_name
   `, [req.user.id]);

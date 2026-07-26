@@ -15,12 +15,16 @@
     <div id="projectView" style="display:none">
       <div class="card" style="margin-bottom:16px">
         <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px;margin-bottom:16px">
-          <div><h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)" id="projTitle"></h2><p style="font-size:13px;color:var(--gray-500)" id="projStatus"></p></div>
+          <div>
+            <h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)" id="projTitle"></h2>
+            <p style="font-size:13px;color:var(--gray-500)" id="projStatus"></p>
+          </div>
           <div style="display:flex;gap:8px">
             <button class="btn btn-secondary btn-sm" onclick="showEdit()">Edit</button>
             <button class="btn btn-primary btn-sm" id="submitBtn" onclick="submitProject()">Submit for Review</button>
           </div>
         </div>
+        <div id="groupInfo" style="margin-bottom:12px;padding:10px 14px;background:var(--soft-blue-50);border-radius:6px;display:none"></div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Objective</div><div style="font-size:14px" id="projObjective"></div></div>
           <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Purpose</div><div style="font-size:14px" id="projPurpose"></div></div>
@@ -32,8 +36,9 @@
 
     <div id="editForm" style="display:none">
       <div class="card" style="max-width:600px">
-        <h3 style="font-size:16px;font-weight:700;color:var(--dark-blue-800);margin-bottom:16px">Edit Project Idea</h3>
-        <div class="form-group"><label class="form-label">Title</label><input class="form-input" id="editTitle"></div>
+        <h3 style="font-size:16px;font-weight:700;color:var(--dark-blue-800);margin-bottom:16px">Edit Project & Group</h3>
+        <div class="form-group"><label class="form-label">Group Name</label><input class="form-input" id="editGroupName"></div>
+        <div class="form-group"><label class="form-label">Project Title</label><input class="form-input" id="editTitle"></div>
         <div class="form-group"><label class="form-label">Objective</label><textarea class="form-input" id="editObjective" rows="2"></textarea></div>
         <div class="form-group"><label class="form-label">Purpose</label><textarea class="form-input" id="editPurpose" rows="2"></textarea></div>
         <div class="form-group"><label class="form-label">Scope</label><textarea class="form-input" id="editScope" rows="2"></textarea></div>
@@ -65,21 +70,25 @@ renderPage('My Project');
 
 async function load() {
   try {
-    const project = await get('/api/student/project');
+    const data = await get('/api/student/group');
     document.getElementById('projectView').style.display = 'block';
     document.getElementById('noProject').style.display = 'none';
-    document.getElementById('projTitle').textContent = project.title;
-    document.getElementById('projObjective').textContent = project.objective;
-    document.getElementById('projPurpose').textContent = project.purpose;
-    document.getElementById('projScope').textContent = project.scope;
-    document.getElementById('projStatus').innerHTML = `Status: <span class="badge ${project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray'}">${project.status}</span>`;
-    document.getElementById('submitBtn').style.display = project.status === 'draft' ? 'inline-flex' : 'none';
 
-    try {
-      const teacher = await get('/api/student/teacher');
-      document.getElementById('teacherInfo').style.display = 'block';
-      document.getElementById('teacherInfo').innerHTML = `<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Assigned Teacher</div><div style="font-size:14px;font-weight:600;color:var(--dark-blue-700)">${teacher.full_name}</div>`;
-    } catch { document.getElementById('teacherInfo').style.display = 'none'; }
+    const hasProject = data.project_id;
+    const status = data.status || 'draft';
+    document.getElementById('projTitle').textContent = data.title || '(No project yet)';
+    document.getElementById('projObjective').textContent = data.objective || '-';
+    document.getElementById('projPurpose').textContent = data.purpose || '-';
+    document.getElementById('projScope').textContent = data.scope || '-';
+    document.getElementById('projStatus').innerHTML = 'Status: <span class="badge ' + (status === 'approved' ? 'badge-green' : status === 'rejected' ? 'badge-red' : status === 'submitted' ? 'badge-yellow' : 'badge-gray') + '">' + status + '</span>';
+    document.getElementById('submitBtn').style.display = hasProject && status === 'draft' ? 'inline-flex' : 'none';
+
+    document.getElementById('groupInfo').style.display = 'block';
+    document.getElementById('groupInfo').innerHTML = '<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap"><span><strong style="color:var(--dark-blue-700)">Group:</strong> ' + data.group_name + '</span><span><strong style="color:var(--dark-blue-700)">Teacher:</strong> ' + data.teacher_name + '</span></div>';
+    document.getElementById('editGroupName').value = data.group_name;
+
+    document.getElementById('teacherInfo').style.display = 'block';
+    document.getElementById('teacherInfo').innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Assigned Teacher</div><div style="font-size:14px;font-weight:600;color:var(--dark-blue-700)">' + data.teacher_name + ' (' + data.teacher_email + ')</div>';
   } catch {
     document.getElementById('projectView').style.display = 'none';
     document.getElementById('noProject').style.display = 'block';
@@ -107,14 +116,21 @@ function showEdit() {
 function cancelEdit() { location.reload(); }
 
 async function saveProject() {
-  const body = {
-    title: document.getElementById('editTitle').value,
-    objective: document.getElementById('editObjective').value,
-    purpose: document.getElementById('editPurpose').value,
-    scope: document.getElementById('editScope').value,
-  };
+  const body = {};
+  const groupName = document.getElementById('editGroupName').value.trim();
+  const title = document.getElementById('editTitle').value.trim();
+  const objective = document.getElementById('editObjective').value.trim();
+  const purpose = document.getElementById('editPurpose').value.trim();
+  const scope = document.getElementById('editScope').value.trim();
+
+  if (groupName) body.group_name = groupName;
+  if (title) body.title = title;
+  if (objective) body.objective = objective;
+  if (purpose) body.purpose = purpose;
+  if (scope) body.scope = scope;
+
   try {
-    await put('/api/student/project', body);
+    await put('/api/student/group', body);
     location.reload();
   } catch (e) { alert(e.message); }
 }

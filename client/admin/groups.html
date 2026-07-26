@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Groups - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="card" style="padding:0;margin-bottom:24px">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">Groups</span>
+        <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ New Group</button>
+      </div>
+      <div class="table-container"><table><thead><tr><th>Group Name</th><th>Teacher</th><th>Students</th><th>Created</th><th style="width:140px">Actions</th></tr></thead><tbody id="groupsList"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+<div id="createModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeCreateModal()">
+  <div class="modal" onclick="event.stopPropagation()">
+    <h3>Create Group</h3>
+    <div class="form-group"><label class="form-label">Group Name</label><input class="form-input" id="newGroupName"></div>
+    <div class="form-group"><label class="form-label">Teacher</label><select class="form-input" id="newGroupTeacher"></select></div>
+    <div id="createMsg" style="font-size:13px;margin-bottom:8px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="handleCreate()">Create</button>
+    </div>
+  </div>
+</div>
+
+<div id="assignModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeAssignModal()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:500px">
+    <h3>Assign Students to Group</h3>
+    <p style="font-size:13px;color:var(--gray-500);margin-bottom:12px" id="assignGroupName"></p>
+    <input type="hidden" id="assignGroupId">
+    <div class="form-group">
+      <label class="form-label">Select Students</label>
+      <div id="studentCheckboxes" style="max-height:250px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px"></div>
+    </div>
+    <div id="assignMsg" style="font-size:13px;margin-bottom:8px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAssignModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="handleAssign()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+    <h3>Confirm Delete</h3>
+    <p style="font-size:14px;color:var(--gray-600);margin-bottom:16px" id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'admin') redirectByRole(user.role);
+renderPage('Groups');
+
+let deleteTargetId = null;
+
+async function load() {
+  const groups = await get('/api/admin/groups');
+  const tbody = document.getElementById('groupsList');
+  if (groups.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No groups yet</p></td></tr>';
+  } else {
+    tbody.innerHTML = groups.map(g => `
+      <tr>
+        <td style="font-weight:600;color:var(--dark-blue-700)">${g.group_name}</td>
+        <td>${g.teacher_name}</td>
+        <td><span class="badge badge-blue">${g.student_count} students</span></td>
+        <td style="color:var(--gray-400);font-size:13px">${new Date(g.created_at).toLocaleDateString()}</td>
+        <td>
+          <button class="btn btn-soft btn-sm" onclick="showAssignModal('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Assign</button>
+          <button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="confirmDelete('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Delete</button>
+        </td>
+      </tr>
+    `).join('');
+  }
+}
+
+async function showCreateModal() {
+  document.getElementById('newGroupName').value = '';
+  document.getElementById('createMsg').style.display = 'none';
+  const teachers = await get('/api/admin/teachers');
+  const sel = document.getElementById('newGroupTeacher');
+  sel.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
+  document.getElementById('createModal').style.display = 'flex';
+}
+
+function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+
+async function handleCreate() {
+  const group_name = document.getElementById('newGroupName').value.trim();
+  const teacher_id = document.getElementById('newGroupTeacher').value;
+  const msg = document.getElementById('createMsg');
+  if (!group_name) { msg.textContent = 'Group name required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  try {
+    await post('/api/admin/groups', { group_name, teacher_id });
+    closeCreateModal();
+    load();
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+  }
+}
+
+async function showAssignModal(groupId, groupName) {
+  document.getElementById('assignGroupId').value = groupId;
+  document.getElementById('assignGroupName').textContent = 'Group: ' + groupName;
+  document.getElementById('assignMsg').style.display = 'none';
+
+  const [students, assigned] = await Promise.all([
+    get('/api/admin/students'),
+    get('/api/admin/groups/' + groupId + '/students').catch(() => []),
+  ]);
+  const assignedIds = new Set(assigned.map(s => s.id));
+
+  const container = document.getElementById('studentCheckboxes');
+  container.innerHTML = students.map(s => {
+    const checked = assignedIds.has(s.id) ? 'checked' : '';
+    return '<label style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:4px;cursor:pointer;font-size:14px">' +
+      '<input type="checkbox" class="student-cb" value="' + s.id + '" ' + checked + '> ' + s.full_name + ' (' + s.email + ')</label>';
+  }).join('');
+
+  document.getElementById('assignModal').style.display = 'flex';
+}
+
+function closeAssignModal() { document.getElementById('assignModal').style.display = 'none'; }
+
+async function handleAssign() {
+  const groupId = document.getElementById('assignGroupId').value;
+  const cbs = document.querySelectorAll('.student-cb:checked');
+  const student_ids = Array.from(cbs).map(cb => cb.value);
+  const msg = document.getElementById('assignMsg');
+  try {
+    await api('/api/admin/groups/' + groupId + '/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ student_ids }),
+    });
+    msg.textContent = 'Students assigned!';
+    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+    setTimeout(() => { closeAssignModal(); load(); }, 1000);
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+  }
+}
+
+function confirmDelete(id, name) {
+  deleteTargetId = id;
+  document.getElementById('confirmText').textContent = 'Delete group "' + name + '"? Students will be unassigned.';
+  document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmBtn').onclick = handleDelete;
+}
+
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; deleteTargetId = null; }
+
+async function handleDelete() {
+  try {
+    await api('/api/admin/groups/' + deleteTargetId, { method: 'DELETE' });
+    closeConfirm();
+    load();
+  } catch (e) {
+    document.getElementById('confirmText').textContent = 'Error: ' + e.message;
+  }
+}
+
+load();
+</script>
+</body>
+</html>
