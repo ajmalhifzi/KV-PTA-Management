@@ -17,7 +17,7 @@
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <input class="form-input" id="fileName" placeholder="File name" style="flex:1;min-width:200px">
-          <input class="form-input" id="fileUrl" placeholder="File URL (base64 or link)" style="flex:2;min-width:300px">
+          <input type="file" id="fileInput" style="flex:2;min-width:300px;padding:6px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px">
           <select class="form-input" id="fileCategory" style="width:160px">
             <option value="supplementary">Supplementary</option>
             <option value="formal">Formal Document</option>
@@ -56,21 +56,41 @@ async function load() {
 }
 
 async function uploadFile() {
-  const file_name = document.getElementById('fileName').value;
-  const file_url = document.getElementById('fileUrl').value;
+  const fileInput = document.getElementById('fileInput');
+  const fileNameInput = document.getElementById('fileName');
   const category = document.getElementById('fileCategory').value;
   const msg = document.getElementById('uploadMsg');
-  if (!file_name || !file_url) { msg.textContent = 'Name and URL required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+
+  if (!fileInput.files || !fileInput.files[0]) {
+    msg.textContent = 'Please select a file';
+    msg.style.color = '#c92a2a'; msg.style.display = 'block'; return;
+  }
+
+  const file = fileInput.files[0];
+  const file_name = fileNameInput.value || file.name;
+
   try {
-    await post('/api/student/uploads', { file_name, file_url, category });
-    document.getElementById('fileName').value = '';
-    document.getElementById('fileUrl').value = '';
-    msg.textContent = 'File uploaded!';
-    msg.style.color = '#2b8a3e';
-    msg.style.display = 'block';
-    load();
-    setTimeout(() => msg.style.display = 'none', 2000);
-  } catch (e) { msg.textContent = e.message; msg.style.color = '#c92a2a'; msg.style.display = 'block'; }
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        await post('/api/student/uploads', { file_name, file_data: base64, category });
+        fileInput.value = '';
+        fileNameInput.value = '';
+        msg.textContent = 'File uploaded!';
+        msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+        load();
+        setTimeout(() => msg.style.display = 'none', 2000);
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = '#c92a2a'; msg.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+  }
 }
 
 load();

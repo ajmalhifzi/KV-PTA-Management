@@ -17,7 +17,7 @@
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <input class="form-input" id="resTitle" placeholder="Resource title" style="flex:1;min-width:200px">
-          <input class="form-input" id="resUrl" placeholder="File URL" style="flex:2;min-width:300px">
+          <input type="file" id="fileInput" style="flex:2;min-width:300px;padding:6px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px">
           <button class="btn btn-primary" onclick="uploadResource()">Upload</button>
         </div>
         <div id="resMsg" style="font-size:13px;margin-top:8px;display:none"></div>
@@ -53,19 +53,36 @@ async function load() {
 
 async function uploadResource() {
   const title = document.getElementById('resTitle').value;
-  const file_url = document.getElementById('resUrl').value;
+  const fileInput = document.getElementById('fileInput');
   const msg = document.getElementById('resMsg');
-  if (!title || !file_url) { msg.textContent = 'Title and URL required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+
+  if (!title) { msg.textContent = 'Title required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!fileInput.files || !fileInput.files[0]) { msg.textContent = 'Please select a file'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+
+  const file = fileInput.files[0];
+
   try {
-    await post('/api/teacher/resources', { title, file_url });
-    document.getElementById('resTitle').value = '';
-    document.getElementById('resUrl').value = '';
-    msg.textContent = 'Resource uploaded!';
-    msg.style.color = '#2b8a3e';
-    msg.style.display = 'block';
-    load();
-    setTimeout(() => msg.style.display = 'none', 2000);
-  } catch (e) { msg.textContent = e.message; msg.style.color = '#c92a2a'; msg.style.display = 'block'; }
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        await post('/api/teacher/resources', { title, file_data: base64, file_type: file.type });
+        document.getElementById('resTitle').value = '';
+        fileInput.value = '';
+        msg.textContent = 'Resource uploaded!';
+        msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+        load();
+        setTimeout(() => msg.style.display = 'none', 2000);
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = '#c92a2a'; msg.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  } catch (e) {
+    msg.textContent = e.message;
+    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+  }
 }
 
 load();
