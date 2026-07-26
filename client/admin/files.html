@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Files - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+
+    <div class="card" style="padding:0;margin-bottom:24px">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Student Uploads</div>
+      <div class="table-container"><table><thead><tr><th>File</th><th>Student</th><th>Category</th><th>Uploaded</th><th style="width:80px"></th></tr></thead><tbody id="uploadsList"></tbody></table></div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Teacher Resources</div>
+      <div class="table-container"><table><thead><tr><th>Title</th><th>Teacher</th><th>Type</th><th>Uploaded</th><th style="width:80px"></th></tr></thead><tbody id="resourcesList"></tbody></table></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+    <h3>Confirm Delete</h3>
+    <p style="font-size:14px;color:var(--gray-600);margin-bottom:16px" id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'admin') redirectByRole(user.role);
+renderPage('Files');
+
+async function load() {
+  const [uploads, resources] = await Promise.all([
+    get('/api/admin/uploads'),
+    get('/api/admin/resources'),
+  ]);
+
+  const upTbody = document.getElementById('uploadsList');
+  if (uploads.length === 0) {
+    upTbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No uploads</p></td></tr>';
+  } else {
+    upTbody.innerHTML = uploads.map(u => `
+      <tr>
+        <td><a href="${u.file_url}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${u.file_name}</a></td>
+        <td>${u.student_name}</td>
+        <td><span class="badge ${u.category === 'formal' ? 'badge-blue' : 'badge-gray'}">${u.category}</span></td>
+        <td style="color:var(--gray-400);font-size:13px">${new Date(u.uploaded_at).toLocaleDateString()}</td>
+        <td><button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="deleteUpload('${u.id}')">Delete</button></td>
+      </tr>
+    `).join('');
+  }
+
+  const resTbody = document.getElementById('resourcesList');
+  if (resources.length === 0) {
+    resTbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No resources</p></td></tr>';
+  } else {
+    resTbody.innerHTML = resources.map(r => `
+      <tr>
+        <td><a href="${r.file_url}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${r.title}</a></td>
+        <td>${r.teacher_name}</td>
+        <td><span class="badge badge-blue">${r.file_type || '-'}</span></td>
+        <td style="color:var(--gray-400);font-size:13px">${new Date(r.created_at).toLocaleDateString()}</td>
+        <td><button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="deleteResource('${r.id}')">Delete</button></td>
+      </tr>
+    `).join('');
+  }
+}
+
+let deleteAction = null;
+
+function confirmThen(fn) {
+  deleteAction = fn;
+  document.getElementById('confirmText').textContent = 'Delete this file? This cannot be undone.';
+  document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmBtn').onclick = async function() {
+    await deleteAction();
+    closeConfirm();
+    load();
+  };
+}
+
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; deleteAction = null; }
+
+async function deleteUpload(id) {
+  confirmThen(() => api('/api/admin/uploads/' + id, { method: 'DELETE' }));
+}
+
+async function deleteResource(id) {
+  confirmThen(() => api('/api/admin/resources/' + id, { method: 'DELETE' }));
+}
+
+load();
+</script>
+</body>
+</html>

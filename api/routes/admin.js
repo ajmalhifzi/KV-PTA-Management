@@ -1,6 +1,8 @@
 const { Router } = require('express');
+const bcrypt = require('bcrypt');
 const pool = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
+const { deleteFromSupabase } = require('../storage');
 
 const router = Router();
 router.use(authenticate, authorize('admin'));
@@ -24,6 +26,47 @@ router.get('/students', async (req, res) => {
     "SELECT id, email, full_name, created_at FROM users WHERE role = 'student' ORDER BY full_name"
   );
   res.json(rows);
+});
+
+router.put('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { email, full_name, role, password } = req.body;
+
+  const fields = [];
+  const values = [];
+  let idx = 1;
+
+  if (email) { fields.push(`email = $${idx++}`); values.push(email); }
+  if (full_name) { fields.push(`full_name = $${idx++}`); values.push(full_name); }
+  if (role) {
+    if (!['admin', 'teacher', 'student'].includes(role))
+      return res.status(400).json({ error: 'Invalid role' });
+    fields.push(`role = $${idx++}`);
+    values.push(role);
+  }
+  if (password) {
+    const password_hash = await bcrypt.hash(password, 10);
+    fields.push(`password_hash = $${idx++}`);
+    values.push(password_hash);
+  }
+
+  if (!fields.length) return res.status(400).json({ error: 'No fields to update' });
+
+  values.push(id);
+  const { rowCount, rows } = await pool.query(
+    `UPDATE users SET ${fields.join(', ')} WHERE id = $${idx} RETURNING id, email, full_name, role, created_at`,
+    values
+  );
+
+  if (!rowCount) return res.status(404).json({ error: 'User not found' });
+  res.json(rows[0]);
+});
+
+router.delete('/users/:id', async (req, res) => {
+  const { id } = req.params;
+  const { rowCount } = await pool.query('DELETE FROM users WHERE id = $1', [id]);
+  if (!rowCount) return res.status(404).json({ error: 'User not found' });
+  res.json({ message: 'User deleted' });
 });
 
 router.post('/assign', async (req, res) => {
@@ -124,6 +167,48 @@ router.post('/seed-fyp', async (req, res) => {
   } catch {
     res.status(500).json({ error: 'Seeding failed' });
   }
+});
+
+router.get('/uploads', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT pu.*, u.full_name AS student_name, u.email AS student_email
+    FROM project_uploads pu
+    JOIN users u ON u.id = pu.student_id
+    ORDER BY pu.uploaded_at DESC
+  `);
+  res.json(rows);
+});
+
+router.delete('/uploads/:id', async (req, res) => {
+  const { id } = req.params;
+  const { rows } = await pool.query(
+    'DELETE FROM project_uploads WHERE id = $1 RETURNING file_url',
+    [id]
+  );
+  if (!rows.length) return res.status(404).json({ error: 'Upload not found' });
+  try { await deleteFromSupabase(rows[0].file_url); } catch {}
+  res.json({ message: 'Upload deleted' });
+});
+
+router.get('/resources', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT rf.*, u.full_name AS teacher_name
+    FROM resource_files rf
+    JOIN users u ON u.id = rf.teacher_id
+    ORDER BY rf.created_at DESC
+  `);
+  res.json(rows);
+});
+
+router.delete('/resources/:id', async (req, res) => {
+  const { id } = req.params;
+  const { rows } = await pool.query(
+    'DELETE FROM resource_files WHERE id = $1 RETURNING file_url',
+    [id]
+  );
+  if (!rows.length) return res.status(404).json({ error: 'Resource not found' });
+  try { await deleteFromSupabase(rows[0].file_url); } catch {}
+  res.json({ message: 'Resource deleted' });
 });
 
 module.exports = router;

@@ -1,8 +1,10 @@
 const NAV = {
   admin: [
     { label: 'Overview', icon: 'grid', href: '/admin/dashboard.html' },
-    { label: 'Teachers', icon: 'users', href: '/admin/teachers.html' },
+    { label: 'Users', icon: 'users', href: '/admin/users.html' },
+    { label: 'Teachers', icon: 'book-open', href: '/admin/teachers.html' },
     { label: 'Students', icon: 'book-open', href: '/admin/students.html' },
+    { label: 'Files', icon: 'upload', href: '/admin/files.html' },
     { label: 'Error Logs', icon: 'alert-circle', href: '/admin/error-logs.html' },
     { label: 'Seed Data', icon: 'database', href: '/admin/seed.html' },
   ],

@@ -25,4 +25,25 @@ function sanitizeFileName(name) {
   return `${ts}_${safe}`;
 }
 
-module.exports = { uploadToSupabase, sanitizeFileName };
+async function deleteFromSupabase(fileUrl) {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+
+  const pathPrefix = `${supabaseUrl}/storage/v1/object/public/fyp-files/`;
+  if (!fileUrl || !fileUrl.startsWith(pathPrefix)) return;
+
+  const fileName = fileUrl.slice(pathPrefix.length).split('?')[0];
+  if (!fileName) return;
+
+  const res = await fetch(`${supabaseUrl}/storage/v1/object/fyp-files/${fileName}`, {
+    method: 'DELETE',
+    headers: { 'Authorization': `Bearer ${serviceKey}` },
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`Storage delete failed: ${errText}`);
+  }
+}
+
+module.exports = { uploadToSupabase, sanitizeFileName, deleteFromSupabase };
