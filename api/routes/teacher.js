@@ -95,7 +95,11 @@ router.post('/resources', async (req, res) => {
   let finalUrl = file_url;
   if (file_data) {
     const safeName = sanitizeFileName(title);
-    finalUrl = await uploadToSupabase(safeName, file_data);
+    try {
+      finalUrl = await uploadToSupabase(safeName, file_data);
+    } catch (err) {
+      return res.status(500).json({ error: 'File upload to storage failed: ' + err.message });
+    }
   }
 
   const { rows } = await pool.query(
