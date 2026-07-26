@@ -285,7 +285,7 @@ router.delete('/uploads/:id', async (req, res) => {
     [id]
   );
   if (!rows.length) return res.status(404).json({ error: 'Upload not found' });
-  try { await deleteFromSupabase(rows[0].file_url); } catch {}
+  if (rows[0].file_url) try { await deleteFromSupabase(rows[0].file_url); } catch {}
   res.json({ message: 'Upload deleted' });
 });
 
@@ -306,7 +306,7 @@ router.delete('/resources/:id', async (req, res) => {
     [id]
   );
   if (!rows.length) return res.status(404).json({ error: 'Resource not found' });
-  try { await deleteFromSupabase(rows[0].file_url); } catch {}
+  if (rows[0].file_url) try { await deleteFromSupabase(rows[0].file_url); } catch {}
   res.json({ message: 'Resource deleted' });
 });
 

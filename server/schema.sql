@@ -60,7 +60,8 @@ CREATE TABLE resource_files (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   teacher_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL,
-  file_url TEXT NOT NULL,
+  file_url TEXT,
+  file_data TEXT,
   file_type VARCHAR(100),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -71,7 +72,8 @@ CREATE TABLE project_uploads (
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   file_name VARCHAR(255) NOT NULL,
-  file_url TEXT NOT NULL,
+  file_url TEXT,
+  file_data TEXT,
   category VARCHAR(20) NOT NULL DEFAULT 'supplementary' CHECK (category IN ('formal', 'supplementary')),
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

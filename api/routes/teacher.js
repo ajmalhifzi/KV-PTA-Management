@@ -1,7 +1,6 @@
 const { Router } = require('express');
 const pool = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
-const { uploadToSupabase, sanitizeFileName } = require('../storage');
 
 const router = Router();
 router.use(authenticate, authorize('teacher'));
