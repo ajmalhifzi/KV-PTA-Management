@@ -3,11 +3,14 @@ const pool = require('./db');
 async function uploadToSupabase(fileName, fileData) {
   const supabaseUrl = process.env.SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+  const anonKey = process.env.SUPABASE_ANON_KEY;
+  const apikey = serviceKey || anonKey;
 
   const res = await fetch(`${supabaseUrl}/storage/v1/object/fyp-files/${fileName}`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${serviceKey}`,
+      'apikey': apikey,
       'Content-Type': 'application/octet-stream',
     },
     body: Buffer.from(fileData, 'base64'),
@@ -41,9 +44,10 @@ async function deleteFromSupabase(fileUrl) {
   const fileName = fileUrl.slice(pathPrefix.length).split('?')[0];
   if (!fileName) return;
 
+  const apikey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY;
   const res = await fetch(`${supabaseUrl}/storage/v1/object/fyp-files/${fileName}`, {
     method: 'DELETE',
-    headers: { 'Authorization': `Bearer ${serviceKey}` },
+    headers: { 'Authorization': `Bearer ${serviceKey}`, 'apikey': apikey },
   });
 
   if (!res.ok) {
