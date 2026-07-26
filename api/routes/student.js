@@ -186,6 +186,18 @@ router.get('/teacher-uploads', async (req, res) => {
   res.json(rows);
 });
 
+router.get('/meetings', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT ml.*, u.full_name AS teacher_name
+    FROM meeting_logs ml
+    JOIN projects p ON p.id = ml.project_id
+    JOIN users u ON u.id = ml.author_id
+    WHERE p.student_id = $1
+    ORDER BY ml.meeting_date DESC, ml.created_at DESC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
 router.get('/teacher', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT u.id, u.email, u.full_name

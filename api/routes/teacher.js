@@ -160,4 +160,69 @@ router.post('/resources', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+router.get('/meetings', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT ml.*, u.full_name AS student_name, u.email AS student_email,
+           p.title AS project_title, g.group_name
+    FROM meeting_logs ml
+    JOIN projects p ON p.id = ml.project_id
+    JOIN teacher_student_assignments tsa ON tsa.student_id = p.student_id AND tsa.teacher_id = $1
+    JOIN users u ON u.id = p.student_id
+    LEFT JOIN groups g ON g.id = tsa.group_id
+    ORDER BY ml.meeting_date DESC, ml.created_at DESC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
+router.post('/projects/:projectId/meetings', async (req, res) => {
+  const { projectId } = req.params;
+  const { meeting_date, notes, action_items, next_meeting } = req.body;
+  if (!meeting_date) return res.status(400).json({ error: 'meeting_date required' });
+  if (!notes) return res.status(400).json({ error: 'notes required' });
+
+  const { rows } = await pool.query(`
+    INSERT INTO meeting_logs (project_id, author_id, meeting_date, notes, action_items, next_meeting)
+    SELECT $1, $2, $3, $4, $5, $6
+    WHERE EXISTS (
+      SELECT 1 FROM teacher_student_assignments tsa
+      JOIN projects p ON p.student_id = tsa.student_id
+      WHERE p.id = $1 AND tsa.teacher_id = $2
+    )
+    RETURNING *
+  `, [projectId, req.user.id, meeting_date, notes, action_items || null, next_meeting || null]);
+
+  if (!rows.length) return res.status(404).json({ error: 'Project not found' });
+  res.status(201).json(rows[0]);
+});
+
+router.put('/meetings/:id', async (req, res) => {
+  const { id } = req.params;
+  const { meeting_date, notes, action_items, next_meeting } = req.body;
+  if (!meeting_date) return res.status(400).json({ error: 'meeting_date required' });
+  if (!notes) return res.status(400).json({ error: 'notes required' });
+
+  const { rowCount, rows } = await pool.query(`
+    UPDATE meeting_logs ml SET meeting_date = $1, notes = $2, action_items = $3, next_meeting = $4, updated_at = NOW()
+    FROM projects p
+    JOIN teacher_student_assignments tsa ON tsa.student_id = p.student_id AND tsa.teacher_id = $5
+    WHERE ml.id = $6 AND ml.project_id = p.id
+    RETURNING ml.*
+  `, [meeting_date, notes, action_items || null, next_meeting || null, req.user.id, id]);
+
+  if (!rowCount) return res.status(404).json({ error: 'Meeting log not found' });
+  res.json(rows[0]);
+});
+
+router.delete('/meetings/:id', async (req, res) => {
+  const { id } = req.params;
+  const { rowCount } = await pool.query(`
+    DELETE FROM meeting_logs ml USING projects p
+    JOIN teacher_student_assignments tsa ON tsa.student_id = p.student_id AND tsa.teacher_id = $1
+    WHERE ml.id = $2 AND ml.project_id = p.id
+  `, [req.user.id, id]);
+
+  if (!rowCount) return res.status(404).json({ error: 'Meeting log not found' });
+  res.json({ message: 'Meeting log deleted' });
+});
+
 module.exports = router;

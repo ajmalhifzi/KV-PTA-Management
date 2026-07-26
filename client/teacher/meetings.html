@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meeting Logs - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+
+    <div class="card" style="padding:0;margin-bottom:16px">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">New Meeting Log</div>
+      <div style="padding:20px">
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+          <select class="form-input" id="studentSelect" style="flex:1;min-width:180px">
+            <option value="">— Select Student —</option>
+          </select>
+          <input class="form-input" id="meetingDate" type="date" style="width:160px">
+          <input class="form-input" id="nextMeetingDate" type="date" placeholder="Next meeting" style="width:160px">
+        </div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:8px">
+          <textarea class="form-input" id="meetingNotes" placeholder="Meeting notes..." style="flex:2;min-width:250px;resize:vertical;min-height:60px"></textarea>
+          <textarea class="form-input" id="actionItems" placeholder="Action items..." style="flex:1;min-width:200px;resize:vertical;min-height:60px"></textarea>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;align-items:center">
+          <button class="btn btn-primary" onclick="createMeeting()">Save Log</button>
+          <button class="btn btn-secondary" id="cancelEditBtn" style="display:none" onclick="cancelEdit()">Cancel</button>
+          <div id="formMsg" style="font-size:13px;display:none"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Meeting Logs</div>
+      <div id="meetingsContainer" style="padding:16px 20px"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="confirmModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+  <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
+    <h3>Confirm Delete</h3>
+    <p style="font-size:14px;color:var(--gray-600);margin-bottom:16px" id="confirmText"></p>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
+      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'teacher') redirectByRole(user.role);
+renderPage('Meeting Logs');
+
+let editId = null;
+
+async function loadStudents() {
+  const students = await get('/api/teacher/students');
+  const sel = document.getElementById('studentSelect');
+  sel.innerHTML = '<option value="">— Select Student —</option>' +
+    students.filter(s => s.project_id).map(s =>
+      `<option value="${s.student_id}" data-project="${s.project_id}">${s.full_name}${s.group_name ? ' (' + s.group_name + ')' : ''}</option>`
+    ).join('');
+}
+
+async function load() {
+  const meetings = await get('/api/teacher/meetings');
+  const container = document.getElementById('meetingsContainer');
+
+  if (meetings.length === 0) {
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--gray-400);font-size:13px">No meeting logs yet</div>';
+    return;
+  }
+
+  const groups = {};
+  for (const m of meetings) {
+    const key = m.meeting_date;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const labels = { [today]: 'Today', [yesterday]: 'Yesterday' };
+
+  container.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(key => {
+    const d = new Date(key + 'T12:00:00');
+    const label = labels[key] || d.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div style="font-weight:700;font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
+      ${groups[key].map(m => renderMeetingCard(m)).join('')}
+    `;
+  }).join('');
+}
+
+function renderMeetingCard(m) {
+  const nextDate = m.next_meeting ? new Date(m.next_meeting + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+  return `
+    <div style="border:1.5px solid var(--gray-200);border-radius:8px;padding:12px 16px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">${m.student_name}</span>
+            <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">${m.group_name || 'No Group'}</span>
+            <span style="font-size:11px;color:var(--gray-400)">${m.project_title || ''}</span>
+          </div>
+          <div style="font-size:13px;color:var(--gray-700);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
+          ${m.action_items ? '<div style="font-size:12px;color:var(--dark-blue-600);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}
+          ${nextDate ? '<div style="font-size:11px;color:var(--gray-500)">Next meeting: ' + nextDate + '</div>' : ''}
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0">
+          <button class="btn btn-sm" style="background:#fff;border:1px solid var(--gray-300)" onclick="editMeeting('${m.id}')">Edit</button>
+          <button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="confirmDelete('${m.id}')">Delete</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function createMeeting() {
+  const studentId = document.getElementById('studentSelect').value;
+  const meetingDate = document.getElementById('meetingDate').value;
+  const notes = document.getElementById('meetingNotes').value.trim();
+  const actionItems = document.getElementById('actionItems').value.trim();
+  const nextMeeting = document.getElementById('nextMeetingDate').value;
+  const msg = document.getElementById('formMsg');
+
+  if (!studentId) { msg.textContent = 'Select a student'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!meetingDate) { msg.textContent = 'Select meeting date'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!notes) { msg.textContent = 'Enter meeting notes'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+
+  const studentOpt = document.querySelector(`#studentSelect option[value="${studentId}"]`);
+  const projectId = studentOpt ? studentOpt.dataset.project : null;
+  if (!projectId) { msg.textContent = 'Student has no project'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+
+  const body = { meeting_date: meetingDate, notes, action_items: actionItems || null, next_meeting: nextMeeting || null };
+  msg.style.display = 'none';
+
+  try {
+    if (editId) {
+      await put('/api/teacher/meetings/' + editId, body);
+      editId = null;
+      document.getElementById('cancelEditBtn').style.display = 'none';
+    } else {
+      await post('/api/teacher/projects/' + projectId + '/meetings', body);
+    }
+    document.getElementById('studentSelect').value = '';
+    document.getElementById('meetingDate').value = '';
+    document.getElementById('meetingNotes').value = '';
+    document.getElementById('actionItems').value = '';
+    document.getElementById('nextMeetingDate').value = '';
+    msg.textContent = editId ? 'Meeting updated!' : 'Meeting log saved!';
+    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+    load();
+    setTimeout(() => msg.style.display = 'none', 2000);
+  } catch (err) {
+    msg.textContent = err.message;
+    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+  }
+}
+
+function editMeeting(id) {
+  // We need to find the meeting data. Since we have it rendered, we refetch to populate form.
+  // Simple approach: store editId and let user fill form manually, or refetch.
+  editId = id;
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  document.getElementById('formMsg').textContent = 'Editing meeting log #' + id.slice(0, 6) + '...';
+  document.getElementById('formMsg').style.color = '#2b8a3e';
+  document.getElementById('formMsg').style.display = 'block';
+}
+
+function cancelEdit() {
+  editId = null;
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  document.getElementById('studentSelect').value = '';
+  document.getElementById('meetingDate').value = '';
+  document.getElementById('meetingNotes').value = '';
+  document.getElementById('actionItems').value = '';
+  document.getElementById('nextMeetingDate').value = '';
+  document.getElementById('formMsg').style.display = 'none';
+}
+
+async function confirmDelete(id) {
+  document.getElementById('confirmText').textContent = 'Delete this meeting log? This cannot be undone.';
+  document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmBtn').onclick = async function() {
+    try {
+      await api('/api/teacher/meetings/' + id, { method: 'DELETE' });
+      closeConfirm();
+      load();
+    } catch (e) { alert(e.message); closeConfirm(); }
+  };
+}
+
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; }
+
+loadStudents();
+load();
+setInterval(load, 10000);
+</script>
+</body>
+</html>

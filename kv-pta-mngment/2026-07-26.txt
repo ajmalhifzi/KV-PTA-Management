@@ -1,0 +1,80 @@
+2026-07-26 — File Upload, Groups, Teacher Uploads, Auto-refresh, Card Layout
+
+File Upload Reliability:
+- Added Express JSON error handler middleware (api/index.js)
+- Wrapped uploadToSupabase in try/catch in student + teacher routes
+- Added SUPABASE_SERVICE_KEY to Vercel env (was missing)
+- Set fyp-files bucket to public
+- JSON body limit 50mb, fetch timeout 60s, file type accept filter, 25MB client-side size validation
+- Storage errors logged to error_logs table
+
+Supabase Storage Issues (Cloudflare WAF blocking):
+- Cloudflare WAF on supabase.co blocks Vercel server-to-server requests
+- Tried: apikey header — still blocked
+- Tried: @supabase/supabase-js on backend — still blocked by Cloudflare
+- Tried: Direct browser upload with anon key — CORS error (no Access-Control-Allow-Origin)
+- Tried: @supabase/supabase-js from CDN — same CORS error
+- Root cause: Cloudflare WAF blocks binary uploads to supabase.co from Vercel IPs
+
+Solution — Files stored as base64 in PostgreSQL:
+- Added file_data TEXT column to project_uploads and resource_files
+- Removed NOT NULL constraint from file_url (can be NULL when using file_data)
+- GET /api/files/uploads/:id and /api/files/resources/:id endpoints serve files from DB
+- Frontend: FileReader → base64 → POST to backend → stored in DB
+- No Supabase Storage/Cloudflare involved for file uploads
+
+Admin Management:
+- PUT /api/admin/users/:id and DELETE /api/admin/users/:id (edit modal, delete confirm)
+- GET /api/admin/uploads, DELETE /api/admin/uploads/:id (with file cleanup)
+- GET /api/admin/resources, DELETE /api/admin/resources/:id
+- deleteFromSupabase function in storage.js (guarded — only called if file_url exists)
+- Admin pages: users.html (edit/delete), files.html (uploads + resources tables)
+
+Groups System:
+- groups table (id, group_name, teacher_id, created_at)
+- group_id FK added to teacher_student_assignments and projects
+- Migration: existing 6 assignments backfilled into individual groups
+- Admin routes: GET/POST/DELETE /api/admin/groups, POST /api/admin/groups/:id/students
+- Admin groups.html: create group, assign students via checkboxes, delete group
+- Admin dashboard shows group count stat card
+- Admin teachers page: each teacher card shows groups with student names/emails
+- Admin students page: shows group badge + teacher name per student
+- Teacher dashboard: shows groups with students and approve/revise inline
+- Student project page: edit group name + project details
+- Schema.sql updated with groups table + group_id columns
+- 4 Malaysian students registered: ahmadibrahim, sitinurhaliza, mkhairi, nurulaisyah (pw: 1234)
+
+Teacher Uploads:
+- GET /api/teacher/uploads — returns files from teacher's assigned students (with group info)
+- POST /api/teacher/upload-for-student — teacher uploads a file directly into a student's project
+- teacher_id column added to project_uploads (NULL = student self-upload, set = teacher upload)
+- Teacher uploads.html page: upload form with student dropdown + date-grouped card layout
+
+Student "From Teacher" Page:
+- GET /api/student/teacher-uploads — returns files where teacher_id IS NOT NULL for this student
+- student/teacher-uploads.html page showing teacher-uploaded files with teacher name
+
+Student Resources Page (fixed):
+- GET /api/student/resources now joins via teacher_student_assignments directly (no projects JOIN required)
+- All students (with or without a project) can see their teacher's resources
+- student/resources.html page added with date-grouped cards
+- "Resources" nav link added to student sidebar
+
+Auto-Refresh Polling:
+- setInterval(load, 5000) on: student teacher-uploads, teacher uploads, student comments
+- setInterval(load, 10000) on: student project, teacher dashboard, teacher project-detail
+- location.reload() replaced with load() for smooth updates
+
+Date-Grouped Card Layout (all 6 file pages):
+- Tables replaced with cards grouped under Today / Yesterday / 26 Jul 2026 date headers
+- Each card shows: document icon (SVG), filename link, person name, group name, category badge, time
+- Admin cards include Delete button with confirm modal
+- Pages: admin/files.html, teacher/uploads.html, teacher/resources.html, student/uploads.html, student/teacher-uploads.html, student/resources.html
+
+Meeting Logs:
+- meeting_logs table (id, project_id, author_id, meeting_date, notes, action_items, next_meeting, timestamps)
+- Teacher: GET /api/teacher/meetings, POST/PUT/DELETE meeting CRUD with auth scoping
+- Student: GET /api/student/meetings — read-only view of own project meetings
+- teacher/meetings.html: create form (student select, date, notes, action items, next meeting), date-grouped cards, edit/delete
+- student/meetings.html: date-grouped cards showing teacher name, notes, action items, next meeting
+- Nav: Meeting Logs added to teacher sidebar, Meetings added to student sidebar

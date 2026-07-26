@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meetings - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Meeting Logs</div>
+      <div id="meetingsContainer" style="padding:16px 20px"></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'student') redirectByRole(user.role);
+renderPage('Meetings');
+
+async function load() {
+  const meetings = await get('/api/student/meetings');
+  const container = document.getElementById('meetingsContainer');
+
+  if (meetings.length === 0) {
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--gray-400);font-size:13px">No meeting logs from your teacher yet</div>';
+    return;
+  }
+
+  const groups = {};
+  for (const m of meetings) {
+    const key = m.meeting_date;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(m);
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const labels = { [today]: 'Today', [yesterday]: 'Yesterday' };
+
+  container.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(key => {
+    const d = new Date(key + 'T12:00:00');
+    const label = labels[key] || d.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div style="font-weight:700;font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
+      ${groups[key].map(m => {
+        const nextDate = m.next_meeting ? new Date(m.next_meeting + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+        return `
+          <div style="border:1.5px solid var(--gray-200);border-radius:8px;padding:12px 16px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">${m.teacher_name}</span>
+              <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Meeting</span>
+            </div>
+            <div style="font-size:13px;color:var(--gray-700);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
+            ${m.action_items ? '<div style="font-size:12px;color:var(--dark-blue-600);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}
+            ${nextDate ? '<div style="font-size:11px;color:var(--gray-500)">Next meeting: ' + nextDate + '</div>' : ''}
+          </div>
+        `;
+      }).join('')}
+    `;
+  }).join('');
+}
+
+load();
+setInterval(load, 5000);
+</script>
+</body>
+</html>

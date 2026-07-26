@@ -1,0 +1,35 @@
+2026-07-19 — Initial Platform Setup
+
+Stack:
+- Express 5 backend (serverless on Vercel)
+- PostgreSQL via Supabase (connection pooling, SSL)
+- JWT + bcrypt auth (access/refresh tokens)
+- Vanilla HTML + Tailwind CSS (CDN) + Vanilla JS frontend
+- Design: Linear-style, white/soft-blue/dark-blue palette, light collapsible sidebar, square badges, 1.5px solid card borders
+
+Database (schema.sql):
+- users (id, email, password_hash, full_name, role, created_at)
+- projects (id, student_id UNIQUE, title, objective, purpose, scope, status, submitted_at, updated_at)
+- teacher_student_assignments (teacher_id, student_id UNIQUE)
+- comments (id, project_id, author_id, content, created_at)
+- resource_files (id, teacher_id, title, file_url, file_type, created_at)
+- project_uploads (id, project_id, student_id, file_name, file_url, category, uploaded_at)
+- error_logs (id, source, message, detail, created_at)
+
+API Routes:
+- POST /api/auth/register, POST /api/auth/login — JWT auth
+- GET /api/config/public — Supabase public config
+- Admin CRUD: users, assignments, overview stats, error-logs, seed fyp data
+- Teacher: groups, students, projects, comments, resources (upload)
+- Student: group, project (create/submit), comments, uploads, resources (view), teacher info
+
+Frontend Pages:
+- login.html, register.html
+- Admin: dashboard, users, teachers, students, files, error-logs, seed
+- Teacher: dashboard, resources, project-detail
+- Student: project, comments, uploads
+
+Deployment:
+- Vercel with Express 5 serverless function (api/index.js)
+- Static files served via express.static from /client
+- Catch-all route serves .html files for SPA-like navigation

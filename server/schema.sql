@@ -89,7 +89,21 @@ CREATE TABLE error_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 9. Old FYP data (seeded mock data for AI idea recommendations)
+-- 9. Meeting logs (teacher supervision meeting records)
+CREATE TABLE meeting_logs (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  author_id UUID NOT NULL REFERENCES users(id),
+  meeting_date DATE NOT NULL,
+  notes TEXT NOT NULL,
+  action_items TEXT,
+  next_meeting DATE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_meeting_logs_project_id ON meeting_logs(project_id);
+
+-- 10. Old FYP data (seeded mock data for AI idea recommendations)
 CREATE TABLE old_fyp_data (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title VARCHAR(255) NOT NULL,
