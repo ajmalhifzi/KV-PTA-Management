@@ -57,7 +57,7 @@ async function load() {
   } else {
     upTbody.innerHTML = uploads.map(u => `
       <tr>
-        <td><a href="${u.file_url}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${u.file_name}</a></td>
+        <td><a href="/api/files/uploads/${u.id}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${u.file_name}</a></td>
         <td>${u.student_name}</td>
         <td><span class="badge ${u.category === 'formal' ? 'badge-blue' : 'badge-gray'}">${u.category}</span></td>
         <td style="color:var(--gray-400);font-size:13px">${new Date(u.uploaded_at).toLocaleDateString()}</td>
@@ -72,7 +72,7 @@ async function load() {
   } else {
     resTbody.innerHTML = resources.map(r => `
       <tr>
-        <td><a href="${r.file_url}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${r.title}</a></td>
+        <td><a href="/api/files/resources/${r.id}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${r.title}</a></td>
         <td>${r.teacher_name}</td>
         <td><span class="badge badge-blue">${r.file_type || '-'}</span></td>
         <td style="color:var(--gray-400);font-size:13px">${new Date(r.created_at).toLocaleDateString()}</td>

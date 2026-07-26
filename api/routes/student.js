@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const pool = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
-const { uploadToSupabase, sanitizeFileName } = require('../storage');
+
 
 const router = Router();
 router.use(authenticate, authorize('student'));
@@ -147,9 +147,9 @@ router.get('/uploads', async (req, res) => {
 });
 
 router.post('/uploads', async (req, res) => {
-  const { file_name, file_url, file_data, category } = req.body;
+  const { file_name, file_data, category } = req.body;
   if (!file_name) return res.status(400).json({ error: 'file_name required' });
-  if (!file_url && !file_data) return res.status(400).json({ error: 'file_url or file_data required' });
+  if (!file_data) return res.status(400).json({ error: 'file_data required' });
 
   const project = await pool.query(
     'SELECT id FROM projects WHERE student_id = $1',
@@ -157,19 +157,9 @@ router.post('/uploads', async (req, res) => {
   );
   if (!project.rows.length) return res.status(404).json({ error: 'No project found' });
 
-  let finalUrl = file_url;
-  if (file_data) {
-    const safeName = sanitizeFileName(file_name);
-    try {
-      finalUrl = await uploadToSupabase(safeName, file_data);
-    } catch (err) {
-      return res.status(500).json({ error: 'File upload to storage failed: ' + err.message });
-    }
-  }
-
   const { rows } = await pool.query(
-    'INSERT INTO project_uploads (project_id, student_id, file_name, file_url, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [project.rows[0].id, req.user.id, file_name, finalUrl, category || 'supplementary']
+    'INSERT INTO project_uploads (project_id, student_id, file_name, file_data, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [project.rows[0].id, req.user.id, file_name, file_data, category || 'supplementary']
   );
   res.status(201).json(rows[0]);
 });

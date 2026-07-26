@@ -111,23 +111,13 @@ router.get('/resources', async (req, res) => {
 });
 
 router.post('/resources', async (req, res) => {
-  const { title, file_url, file_data, file_type } = req.body;
+  const { title, file_data, file_type } = req.body;
   if (!title) return res.status(400).json({ error: 'Title required' });
-  if (!file_url && !file_data) return res.status(400).json({ error: 'file_url or file_data required' });
-
-  let finalUrl = file_url;
-  if (file_data) {
-    const safeName = sanitizeFileName(title);
-    try {
-      finalUrl = await uploadToSupabase(safeName, file_data);
-    } catch (err) {
-      return res.status(500).json({ error: 'File upload to storage failed: ' + err.message });
-    }
-  }
+  if (!file_data) return res.status(400).json({ error: 'file_data required' });
 
   const { rows } = await pool.query(
-    'INSERT INTO resource_files (teacher_id, title, file_url, file_type) VALUES ($1, $2, $3, $4) RETURNING *',
-    [req.user.id, title, finalUrl, file_type || null]
+    'INSERT INTO resource_files (teacher_id, title, file_data, file_type) VALUES ($1, $2, $3, $4) RETURNING *',
+    [req.user.id, title, file_data, file_type || null]
   );
   res.status(201).json(rows[0]);
 });

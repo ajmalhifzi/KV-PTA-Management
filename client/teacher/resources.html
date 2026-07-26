@@ -31,7 +31,6 @@
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="/js/api.js"></script>
 <script src="/js/auth.js"></script>
 <script src="/js/layout.js"></script>
@@ -47,7 +46,7 @@ async function load() {
     tbody.innerHTML = '<tr><td colspan="3" class="empty-state" style="padding:32px"><p>No resources uploaded</p></td></tr>';
   } else {
     tbody.innerHTML = resources.map(r => `
-      <tr><td><a href="${r.file_url}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${r.title}</a></td><td><span class="badge badge-blue">${r.file_type || '-'}</span></td><td style="color:var(--gray-400);font-size:13px">${new Date(r.created_at).toLocaleDateString()}</td></tr>
+      <tr><td><a href="/api/files/resources/${r.id}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${r.title}</a></td><td><span class="badge badge-blue">${r.file_type || '-'}</span></td><td style="color:var(--gray-400);font-size:13px">${new Date(r.created_at).toLocaleDateString()}</td></tr>
     `).join('');
   }
 }
@@ -70,32 +69,25 @@ async function uploadResource() {
   msg.style.color = '#2b8a3e'; msg.style.display = 'block';
 
   try {
-    const config = await getSupabaseConfig();
-    const safeName = sanitizeFileName(title);
-    const supabase = window.supabase.createClient(config.supabaseUrl, config.supabaseAnonKey, {
-      auth: { persistSession: false },
-    });
-
-    const { data, error } = await supabase.storage
-      .from('fyp-files')
-      .upload(safeName, file, {
-        contentType: file.type || 'application/octet-stream',
-        upsert: true,
-      });
-
-    if (error) throw new Error(error.message);
-
-    const file_url = config.supabaseUrl + '/storage/v1/object/public/fyp-files/' + safeName;
-    await post('/api/teacher/resources', { title, file_url, file_type: file.type });
-
-    document.getElementById('resTitle').value = '';
-    fileInput.value = '';
-    msg.textContent = 'Resource uploaded!';
-    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
-    load();
-    setTimeout(() => msg.style.display = 'none', 2000);
-  } catch (err) {
-    msg.textContent = err.message;
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+      const base64 = e.target.result.split(',')[1];
+      try {
+        await post('/api/teacher/resources', { title, file_data: base64, file_type: file.type });
+        document.getElementById('resTitle').value = '';
+        fileInput.value = '';
+        msg.textContent = 'Resource uploaded!';
+        msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+        load();
+        setTimeout(() => msg.style.display = 'none', 2000);
+      } catch (err) {
+        msg.textContent = err.message;
+        msg.style.color = '#c92a2a'; msg.style.display = 'block';
+      }
+    };
+    reader.readAsDataURL(file);
+  } catch (e) {
+    msg.textContent = e.message;
     msg.style.color = '#c92a2a'; msg.style.display = 'block';
   }
 }
