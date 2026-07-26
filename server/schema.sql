@@ -71,6 +71,7 @@ CREATE TABLE project_uploads (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  teacher_id UUID REFERENCES users(id),
   file_name VARCHAR(255) NOT NULL,
   file_url TEXT,
   file_data TEXT,

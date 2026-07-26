@@ -134,8 +134,8 @@ router.post('/upload-for-student', async (req, res) => {
   if (!project.rows.length) return res.status(404).json({ error: 'Student has no project' });
 
   const { rows } = await pool.query(
-    'INSERT INTO project_uploads (project_id, student_id, file_name, file_data, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-    [project.rows[0].id, student_id, file_name, file_data, category || 'supplementary']
+    'INSERT INTO project_uploads (project_id, student_id, teacher_id, file_name, file_data, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+    [project.rows[0].id, student_id, req.user.id, file_name, file_data, category || 'supplementary']
   );
   res.status(201).json(rows[0]);
 });

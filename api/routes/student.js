@@ -175,6 +175,18 @@ router.get('/resources', async (req, res) => {
   res.json(rows);
 });
 
+router.get('/teacher-uploads', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT pu.*, u.full_name AS teacher_name
+    FROM project_uploads pu
+    JOIN projects p ON p.id = pu.project_id
+    JOIN users u ON u.id = pu.teacher_id
+    WHERE p.student_id = $1
+    ORDER BY pu.uploaded_at DESC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
 router.get('/teacher', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT u.id, u.email, u.full_name
