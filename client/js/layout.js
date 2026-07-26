@@ -12,6 +12,7 @@ const NAV = {
   teacher: [
     { label: 'Dashboard', icon: 'grid', href: '/teacher/dashboard.html' },
     { label: 'Resources', icon: 'upload', href: '/teacher/resources.html' },
+    { label: 'Student Uploads', icon: 'file-text', href: '/teacher/uploads.html' },
   ],
   student: [
     { label: 'My Project', icon: 'file-text', href: '/student/project.html' },

@@ -101,6 +101,20 @@ router.post('/projects/:projectId/comments', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+router.get('/uploads', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT pu.*, u.full_name AS student_name, u.email AS student_email,
+           p.title AS project_title, g.group_name
+    FROM project_uploads pu
+    JOIN projects p ON p.id = pu.project_id
+    JOIN users u ON u.id = pu.student_id
+    JOIN teacher_student_assignments tsa ON tsa.student_id = pu.student_id AND tsa.teacher_id = $1
+    LEFT JOIN groups g ON g.id = tsa.group_id
+    ORDER BY pu.uploaded_at DESC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
 router.get('/resources', async (req, res) => {
   const { rows } = await pool.query(
     'SELECT * FROM resource_files WHERE teacher_id = $1 ORDER BY created_at DESC',

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Student Uploads - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Student Uploads</div>
+      <div class="table-container"><table><thead><tr><th>File</th><th>Student</th><th>Group</th><th>Project</th><th>Category</th><th>Uploaded</th></tr></thead><tbody id="uploadsList"></tbody></table></div>
+    </div>
+
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'teacher') redirectByRole(user.role);
+renderPage('Student Uploads');
+
+async function load() {
+  const uploads = await get('/api/teacher/uploads');
+  const tbody = document.getElementById('uploadsList');
+  if (uploads.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:32px"><p>No uploads from your students</p></td></tr>';
+  } else {
+    tbody.innerHTML = uploads.map(u => `
+      <tr>
+        <td><a href="/api/files/uploads/${u.id}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${u.file_name}</a></td>
+        <td>${u.student_name}</td>
+        <td>${u.group_name || '-'}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${u.project_title || '-'}</td>
+        <td><span class="badge ${u.category === 'formal' ? 'badge-blue' : 'badge-gray'}">${u.category}</span></td>
+        <td style="color:var(--gray-400);font-size:13px">${new Date(u.uploaded_at).toLocaleDateString()}</td>
+      </tr>
+    `).join('');
+  }
+}
+
+load();
+</script>
+</body>
+</html>
