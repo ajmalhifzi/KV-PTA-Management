@@ -115,6 +115,31 @@ router.get('/uploads', async (req, res) => {
   res.json(rows);
 });
 
+router.post('/upload-for-student', async (req, res) => {
+  const { student_id, file_name, file_data, category } = req.body;
+  if (!student_id) return res.status(400).json({ error: 'student_id required' });
+  if (!file_name) return res.status(400).json({ error: 'file_name required' });
+  if (!file_data) return res.status(400).json({ error: 'file_data required' });
+
+  const assignment = await pool.query(
+    'SELECT 1 FROM teacher_student_assignments WHERE teacher_id = $1 AND student_id = $2',
+    [req.user.id, student_id]
+  );
+  if (!assignment.rows.length) return res.status(403).json({ error: 'Student not assigned to you' });
+
+  const project = await pool.query(
+    'SELECT id FROM projects WHERE student_id = $1',
+    [student_id]
+  );
+  if (!project.rows.length) return res.status(404).json({ error: 'Student has no project' });
+
+  const { rows } = await pool.query(
+    'INSERT INTO project_uploads (project_id, student_id, file_name, file_data, category) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [project.rows[0].id, student_id, file_name, file_data, category || 'supplementary']
+  );
+  res.status(201).json(rows[0]);
+});
+
 router.get('/resources', async (req, res) => {
   const { rows } = await pool.query(
     'SELECT * FROM resource_files WHERE teacher_id = $1 ORDER BY created_at DESC',
