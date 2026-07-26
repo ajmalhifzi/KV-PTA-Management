@@ -83,11 +83,12 @@ async function addComment() {
 async function updateStatus(status) {
   try {
     await patch(`/api/teacher/projects/${projectId}/status`, { status });
-    location.reload();
+    load();
   } catch (e) { alert(e.message); }
 }
 
 load();
+setInterval(load, 10000);
 </script>
 </body>
 </html>
