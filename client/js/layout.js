@@ -17,8 +17,9 @@ const NAV = {
   student: [
     { label: 'My Project', icon: 'file-text', href: '/student/project.html' },
     { label: 'Comments', icon: 'message-square', href: '/student/comments.html' },
+    { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
     { label: 'Uploads', icon: 'upload', href: '/student/uploads.html' },
-    { label: 'From Teacher', icon: 'book-open', href: '/student/teacher-uploads.html' },
+    { label: 'From Teacher', icon: 'upload', href: '/student/teacher-uploads.html' },
   ],
 };
 

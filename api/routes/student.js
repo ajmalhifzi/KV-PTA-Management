@@ -166,10 +166,9 @@ router.post('/uploads', async (req, res) => {
 
 router.get('/resources', async (req, res) => {
   const { rows } = await pool.query(`
-    SELECT rf.* FROM resource_files rf
-    JOIN teacher_student_assignments tsa ON tsa.teacher_id = rf.teacher_id
-    JOIN projects p ON p.student_id = tsa.student_id
-    WHERE p.student_id = $1
+    SELECT rf.*, u.full_name AS teacher_name FROM resource_files rf
+    JOIN teacher_student_assignments tsa ON tsa.teacher_id = rf.teacher_id AND tsa.student_id = $1
+    JOIN users u ON u.id = rf.teacher_id
     ORDER BY rf.created_at DESC
   `, [req.user.id]);
   res.json(rows);
