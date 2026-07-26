@@ -26,7 +26,7 @@
 
     <div class="card" style="padding:0">
       <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">My Resources</div>
-      <div class="table-container"><table><thead><tr><th>Title</th><th>Type</th><th>Uploaded</th></tr></thead><tbody id="resourcesList"></tbody></table></div>
+      <div id="resourcesContainer" style="padding:16px 20px"></div>
     </div>
   </div>
 </div>
@@ -41,14 +41,51 @@ renderPage('Resources');
 
 async function load() {
   const resources = await get('/api/teacher/resources');
-  const tbody = document.getElementById('resourcesList');
+  const container = document.getElementById('resourcesContainer');
+
   if (resources.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="3" class="empty-state" style="padding:32px"><p>No resources uploaded</p></td></tr>';
-  } else {
-    tbody.innerHTML = resources.map(r => `
-      <tr><td><a href="/api/files/resources/${r.id}" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">${r.title}</a></td><td><span class="badge badge-blue">${r.file_type || '-'}</span></td><td style="color:var(--gray-400);font-size:13px">${new Date(r.created_at).toLocaleDateString()}</td></tr>
-    `).join('');
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--gray-400);font-size:13px">No resources uploaded</div>';
+    return;
   }
+
+  const groups = {};
+  for (const r of resources) {
+    const key = new Date(r.created_at).toISOString().split('T')[0];
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(r);
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+  const labels = { [today]: 'Today', [yesterday]: 'Yesterday' };
+
+  container.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(key => {
+    const label = labels[key] || new Date(key + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `
+      <div style="font-weight:700;font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
+      ${groups[key].map(r => {
+        const d = new Date(r.created_at);
+        const timeStr = d.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
+        return `
+          <div style="border:1.5px solid var(--gray-200);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px">
+            <div style="width:34px;height:34px;border-radius:6px;background:var(--soft-blue-100);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:600;font-size:13px;color:var(--dark-blue-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                <a href="/api/files/resources/${r.id}" target="_blank" style="color:inherit;text-decoration:none">${r.title}</a>
+              </div>
+              <div style="font-size:11px;color:var(--gray-500);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">${r.file_type || '-'}</span>
+                <span>·</span>
+                <span>${timeStr}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('')}
+    `;
+  }).join('');
 }
 
 async function uploadResource() {
