@@ -1,1 +1,1 @@
-v0.3-meeting-logs
+v0.4-notifications
