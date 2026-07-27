@@ -194,11 +194,7 @@ router.post('/groups/:id/students', async (req, res) => {
          ON CONFLICT (student_id) DO UPDATE SET teacher_id = $1, group_id = $3`,
         [group.rows[0].teacher_id, student_id, id]
       );
-      // Assign project to group if exists
-      await client.query(
-        'UPDATE projects SET group_id = $1 WHERE student_id = $2 RETURNING id',
-        [id, student_id]
-      );
+      // Projects are now per-group, no need to update student_id
     }
     await client.query('COMMIT');
     res.json({ message: `${student_ids.length} students assigned to group` });
@@ -270,9 +266,11 @@ router.post('/seed-fyp', async (req, res) => {
 
 router.get('/uploads', async (req, res) => {
   const { rows } = await pool.query(`
-    SELECT pu.*, u.full_name AS student_name, u.email AS student_email
+    SELECT pu.id, pu.project_id, pu.student_id, pu.teacher_id, pu.file_name, pu.file_type, pu.category, pu.uploaded_at,
+           CASE WHEN pu.student_id IS NOT NULL THEN u.full_name ELSE ut.full_name END AS uploader_name
     FROM project_uploads pu
-    JOIN users u ON u.id = pu.student_id
+    LEFT JOIN users u ON u.id = pu.student_id
+    LEFT JOIN users ut ON ut.id = pu.teacher_id
     ORDER BY pu.uploaded_at DESC
   `);
   res.json(rows);
@@ -291,7 +289,7 @@ router.delete('/uploads/:id', async (req, res) => {
 
 router.get('/resources', async (req, res) => {
   const { rows } = await pool.query(`
-    SELECT rf.*, u.full_name AS teacher_name
+    SELECT rf.id, rf.teacher_id, rf.title, rf.file_type, rf.created_at, u.full_name AS teacher_name
     FROM resource_files rf
     JOIN users u ON u.id = rf.teacher_id
     ORDER BY rf.created_at DESC

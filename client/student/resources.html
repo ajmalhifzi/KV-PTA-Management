@@ -30,7 +30,8 @@ if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Resources');
 
 async function load() {
-  const resources = await get('/api/student/resources');
+  let resources;
+  try { resources = await get('/api/student/resources'); } catch { resources = []; }
   const container = document.getElementById('resourcesContainer');
 
   if (resources.length === 0) {

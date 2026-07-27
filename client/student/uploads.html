@@ -44,7 +44,8 @@ if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Uploads');
 
 async function load() {
-  const uploads = await get('/api/student/uploads');
+  let uploads;
+  try { uploads = await get('/api/student/uploads'); } catch { uploads = []; }
   const container = document.getElementById('uploadsContainer');
 
   if (uploads.length === 0) {
@@ -82,6 +83,7 @@ async function load() {
               </div>
               <div style="font-size:11px;color:var(--gray-500);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
                 <span class="badge ${badgeClass}" style="font-size:9px;padding:1px 6px">${u.category}</span>
+                ${u.file_type ? '<span>·</span><span class="badge badge-gray" style="font-size:9px;padding:1px 6px">' + u.file_type + '</span>' : ''}
                 <span>·</span>
                 <span>${timeStr}</span>
                 ${u.teacher_id ? '<span>·</span><span style="color:var(--dark-blue-600)">by teacher</span>' : ''}
@@ -120,7 +122,7 @@ async function uploadFile() {
     reader.onload = async function(e) {
       const base64 = e.target.result.split(',')[1];
       try {
-        await post('/api/student/uploads', { file_name, file_data: base64, category });
+        await post('/api/student/uploads', { file_name, file_data: base64, file_type: file.type, category });
         fileInput.value = '';
         fileNameInput.value = '';
         msg.textContent = 'File uploaded!';

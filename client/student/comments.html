@@ -32,7 +32,8 @@ if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Comments');
 
 async function load() {
-  const comments = await get('/api/student/comments');
+  let comments;
+  try { comments = await get('/api/student/comments'); } catch { comments = []; }
   const container = document.getElementById('commentsList');
   if (comments.length === 0) {
     container.innerHTML = '<div class="empty-state" style="padding:24px"><p>No comments yet. Your teacher will leave feedback here.</p></div>';

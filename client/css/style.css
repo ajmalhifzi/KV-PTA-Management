@@ -160,6 +160,13 @@ select.form-input { appearance: auto; }
 .modal h3 { font-size: 16px; margin-bottom: 16px; color: var(--dark-blue-800); }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
 
+.picker-popup {
+  position: absolute; top: calc(100% + 4px); left: 0; z-index: 50;
+  background: var(--white); border: 1px solid var(--gray-200);
+  border-radius: 8px; padding: 12px; min-width: 200px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+
 .login-page {
   min-height: 100vh; display: flex; align-items: center; justify-content: center;
   background: var(--gray-50); padding: 24px;

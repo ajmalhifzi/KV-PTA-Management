@@ -32,17 +32,14 @@ CREATE TABLE teacher_student_assignments (
 -- 4. Projects (student FYP, linked via student or group)
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  student_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  group_id UUID REFERENCES groups(id) ON DELETE SET NULL,
+  group_id UUID UNIQUE NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL DEFAULT '',
   objective TEXT NOT NULL DEFAULT '',
   purpose TEXT NOT NULL DEFAULT '',
   scope TEXT NOT NULL DEFAULT '',
   status VARCHAR(20) NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'submitted', 'approved', 'rejected', 'revision')),
   github_repo_url TEXT,
-  github_access_token TEXT,
   submitted_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -73,6 +70,7 @@ CREATE TABLE project_uploads (
   student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   teacher_id UUID REFERENCES users(id),
   file_name VARCHAR(255) NOT NULL,
+  file_type VARCHAR(100),
   file_url TEXT,
   file_data TEXT,
   category VARCHAR(20) NOT NULL DEFAULT 'supplementary' CHECK (category IN ('formal', 'supplementary')),
@@ -94,10 +92,10 @@ CREATE TABLE meeting_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   author_id UUID NOT NULL REFERENCES users(id),
-  meeting_date DATE NOT NULL,
+  meeting_date TIMESTAMPTZ NOT NULL,
   notes TEXT NOT NULL,
   action_items TEXT,
-  next_meeting DATE,
+  next_meeting TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -117,7 +115,7 @@ CREATE TABLE old_fyp_data (
 
 -- Indexes
 CREATE INDEX idx_groups_teacher_id ON groups(teacher_id);
-CREATE INDEX idx_projects_student_id ON projects(student_id);
+CREATE INDEX idx_projects_group_id ON projects(group_id);
 CREATE INDEX idx_projects_status ON projects(status);
 CREATE INDEX idx_comments_project_id ON comments(project_id);
 CREATE INDEX idx_resource_files_teacher_id ON resource_files(teacher_id);

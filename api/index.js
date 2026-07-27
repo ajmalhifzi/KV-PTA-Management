@@ -28,15 +28,15 @@ app.get('/api/config/public', (req, res) => {
 app.get('/api/files/uploads/:id', async (req, res) => {
   try {
     const { rows } = await pool.query(
-      'SELECT file_data, file_name FROM project_uploads WHERE id = $1',
+      'SELECT file_data, file_name, file_type FROM project_uploads WHERE id = $1',
       [req.params.id]
     );
     if (!rows.length) return res.status(404).json({ error: 'File not found' });
-    const { file_data, file_name } = rows[0];
+    const { file_data, file_name, file_type } = rows[0];
     if (!file_data) return res.status(404).json({ error: 'File data not available' });
     const buf = Buffer.from(file_data, 'base64');
     res.set('Content-Disposition', 'inline; filename="' + file_name + '"');
-    res.set('Content-Type', 'application/octet-stream');
+    res.set('Content-Type', file_type || 'application/octet-stream');
     res.send(buf);
   } catch (err) {
     res.status(500).json({ error: 'Failed to serve file' });

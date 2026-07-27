@@ -40,7 +40,8 @@ if (user.role !== 'teacher') redirectByRole(user.role);
 renderPage('Resources');
 
 async function load() {
-  const resources = await get('/api/teacher/resources');
+  let resources;
+  try { resources = await get('/api/teacher/resources'); } catch { resources = []; }
   const container = document.getElementById('resourcesContainer');
 
   if (resources.length === 0) {

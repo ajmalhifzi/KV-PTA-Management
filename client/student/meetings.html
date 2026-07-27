@@ -30,7 +30,8 @@ if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Meetings');
 
 async function load() {
-  const meetings = await get('/api/student/meetings');
+  let meetings;
+  try { meetings = await get('/api/student/meetings'); } catch { meetings = []; }
   const container = document.getElementById('meetingsContainer');
 
   if (meetings.length === 0) {
@@ -40,7 +41,7 @@ async function load() {
 
   const groups = {};
   for (const m of meetings) {
-    const key = m.meeting_date;
+    const key = m.meeting_date.split('T')[0];
     if (!groups[key]) groups[key] = [];
     groups[key].push(m);
   }
@@ -51,16 +52,18 @@ async function load() {
 
   container.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(key => {
     const d = new Date(key + 'T12:00:00');
-    const label = labels[key] || d.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    const label = labels[key] || d.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
     return `
       <div style="font-weight:700;font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
       ${groups[key].map(m => {
-        const nextDate = m.next_meeting ? new Date(m.next_meeting + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' }) : null;
+        const meetingTime = new Date(m.meeting_date).toLocaleString('en-MY', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kuala_Lumpur' });
+        const nextDate = m.next_meeting ? new Date(m.next_meeting).toLocaleString('en-MY', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kuala_Lumpur' }) : null;
         return `
           <div style="border:1.5px solid var(--gray-200);border-radius:8px;padding:12px 16px;margin-bottom:8px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
               <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">${m.teacher_name}</span>
               <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Meeting</span>
+              <span style="font-size:11px;color:var(--gray-500)">${meetingTime}</span>
             </div>
             <div style="font-size:13px;color:var(--gray-700);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
             ${m.action_items ? '<div style="font-size:12px;color:var(--dark-blue-600);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}

@@ -14,11 +14,11 @@
   <div class="content-area">
 
     <div class="card" style="padding:0;margin-bottom:16px">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Upload File for Student</div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Upload File for Group</div>
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <select class="form-input" id="studentSelect" style="flex:1;min-width:200px">
-            <option value="">— Select Student —</option>
+          <select class="form-input" id="groupSelect" style="flex:1;min-width:200px">
+            <option value="">— Select Group —</option>
           </select>
           <input class="form-input" id="fileName" placeholder="File name" style="flex:1;min-width:160px">
           <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:280px;padding:6px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px">
@@ -26,7 +26,7 @@
             <option value="supplementary">Supplementary</option>
             <option value="formal">Formal Document</option>
           </select>
-          <button class="btn btn-primary" onclick="uploadForStudent()">Upload</button>
+          <button class="btn btn-primary" onclick="uploadForGroup()">Upload</button>
         </div>
         <div id="uploadMsg" style="font-size:13px;margin-top:8px;display:none"></div>
       </div>
@@ -48,11 +48,17 @@ const user = requireAuth();
 if (user.role !== 'teacher') redirectByRole(user.role);
 renderPage('Student Uploads');
 
-async function loadStudents() {
-  const students = await get('/api/teacher/students');
-  const sel = document.getElementById('studentSelect');
-  sel.innerHTML = '<option value="">— Select Student —</option>' +
-    students.map(s => `<option value="${s.student_id}" data-group="${s.group_name || ''}">${s.full_name}${s.group_name ? ' (' + s.group_name + ')' : ''}</option>`).join('');
+async function loadGroups() {
+  try {
+    const groups = await get('/api/teacher/groups');
+    const sel = document.getElementById('groupSelect');
+    sel.innerHTML = '<option value="">— Select Group —</option>' +
+      groups.filter(g => g.project_id).map(g =>
+        `<option value="${g.id}">${g.group_name} (${g.students ? g.students.length : 0} students)</option>`
+      ).join('');
+  } catch (e) {
+    document.getElementById('groupSelect').innerHTML = '<option value="">Error loading groups</option>';
+  }
 }
 
 function renderCard(u) {
@@ -69,11 +75,12 @@ function renderCard(u) {
           <a href="/api/files/uploads/${u.id}" target="_blank" style="color:inherit;text-decoration:none">${u.file_name}</a>
         </div>
         <div style="font-size:11px;color:var(--gray-500);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <span>${u.student_name}</span>
+          <span>${u.uploader_name || u.student_name || 'Unknown'}</span>
           <span>·</span>
           <span style="font-weight:500">${u.group_name || 'No Group'}</span>
           <span>·</span>
           <span class="badge ${badgeClass}" style="font-size:9px;padding:1px 6px">${u.category}</span>
+          ${u.file_type ? '<span>·</span><span class="badge badge-gray" style="font-size:9px;padding:1px 6px">' + u.file_type + '</span>' : ''}
           <span>·</span>
           <span>${timeStr}</span>
         </div>
@@ -83,7 +90,8 @@ function renderCard(u) {
 }
 
 async function load() {
-  const uploads = await get('/api/teacher/uploads');
+  let uploads;
+  try { uploads = await get('/api/teacher/uploads'); } catch { uploads = []; }
   const container = document.getElementById('uploadsContainer');
 
   if (uploads.length === 0) {
@@ -111,14 +119,14 @@ async function load() {
   }).join('');
 }
 
-async function uploadForStudent() {
-  const studentId = document.getElementById('studentSelect').value;
+async function uploadForGroup() {
+  const groupId = document.getElementById('groupSelect').value;
   const fileInput = document.getElementById('fileInput');
   const fileNameInput = document.getElementById('fileName');
   const category = document.getElementById('fileCategory').value;
   const msg = document.getElementById('uploadMsg');
 
-  if (!studentId) { msg.textContent = 'Please select a student'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!groupId) { msg.textContent = 'Please select a group'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
   if (!fileInput.files || !fileInput.files[0]) { msg.textContent = 'Please select a file'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
 
   const file = fileInput.files[0];
@@ -132,7 +140,7 @@ async function uploadForStudent() {
     reader.onload = async function(e) {
       const base64 = e.target.result.split(',')[1];
       try {
-        await post('/api/teacher/upload-for-student', { student_id: studentId, file_name, file_data: base64, category });
+        await post('/api/teacher/upload-for-group', { group_id: groupId, file_name, file_data: base64, file_type: file.type, category });
         fileInput.value = ''; fileNameInput.value = '';
         msg.textContent = 'File uploaded!'; msg.style.color = '#2b8a3e';
         load();
@@ -143,7 +151,7 @@ async function uploadForStudent() {
   } catch (e) { msg.textContent = e.message; msg.style.color = '#c92a2a'; msg.style.display = 'block'; }
 }
 
-loadStudents();
+loadGroups();
 load();
 setInterval(load, 5000);
 </script>

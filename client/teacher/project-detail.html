@@ -46,7 +46,11 @@ async function load() {
   const project = await get(`/api/teacher/projects/${projectId}`);
   document.getElementById('projectInfo').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
-      <div><h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)">${project.title}</h2><p style="font-size:13px;color:var(--gray-500)">by ${project.student_name} (${project.student_email})</p></div>
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)">${project.title}</h2>
+        <p style="font-size:13px;color:var(--gray-500)">Group: ${project.group_name}</p>
+        <p style="font-size:12px;color:var(--gray-400)">${project.students && project.students.length ? project.students.map(s => s.full_name).join(', ') : ''}</p>
+      </div>
       <div><span class="badge ${project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray'}">${project.status}</span></div>
     </div>
     <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">

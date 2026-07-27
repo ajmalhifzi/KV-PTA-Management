@@ -13,7 +13,10 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
     <div class="stat-grid" id="statCards"></div>
-    <div id="groupsContainer"></div>
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Groups & Projects</div>
+      <div class="table-container"><table><thead><tr><th>Group</th><th>Students</th><th>Project</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="groupsTableBody"></tbody></table></div>
+    </div>
   </div>
 </div>
 
@@ -28,7 +31,8 @@ renderPage('Dashboard');
 const STATUS_BADGE = { draft: 'badge-gray', submitted: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', revision: 'badge-yellow' };
 
 async function load() {
-  const groups = await get('/api/teacher/groups');
+  let groups;
+  try { groups = await get('/api/teacher/groups'); } catch { groups = []; }
   let allStudents = [];
   groups.forEach(g => { if (g.students) allStudents = allStudents.concat(g.students); });
 
@@ -45,40 +49,31 @@ async function load() {
     <div class="card stat-card"><div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-number">${stats.approved}</div><div class="stat-label">Approved</div></div></div>
   `;
 
-  const container = document.getElementById('groupsContainer');
+  const tbody = document.getElementById('groupsTableBody');
   if (groups.length === 0) {
-    container.innerHTML = '<div class="card" style="text-align:center;padding:48px"><p style="color:var(--gray-500)">No groups assigned to you yet</p></div>';
+    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:32px"><p>No groups assigned to you yet</p></td></tr>';
     return;
   }
 
-  container.innerHTML = groups.map(g => `
-    <div class="card" style="padding:0;margin-bottom:16px">
-      <div style="padding:14px 20px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;background:var(--soft-blue-50)">
-        <span style="font-weight:700;font-size:15px;color:var(--dark-blue-800)">${g.group_name}</span>
-        <span class="badge badge-blue">${g.students ? g.students.length : 0} students</span>
-      </div>
-      <div class="table-container"><table><thead><tr><th>Student</th><th>Project</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead><tbody>
-        ${(!g.students || g.students.length === 0)
-          ? '<tr><td colspan="5" class="empty-state" style="padding:24px"><p>No students in this group</p></td></tr>'
-          : g.students.map(s => `
-            <tr>
-              <td>${s.full_name}</td>
-              <td>${s.title || '<span style="color:var(--gray-400)">Not submitted</span>'}</td>
-              <td><span class="badge ${STATUS_BADGE[s.status] || 'badge-gray'}">${s.status || 'no project'}</span></td>
-              <td style="color:var(--gray-400);font-size:13px">${s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : '-'}</td>
-              <td>
-                ${s.project_id ? `
-                  <button class="btn btn-soft btn-sm" onclick="viewProject('${s.project_id}')">View</button>
-                  <button class="btn btn-primary btn-sm" onclick="updateStatus('${s.project_id}','approved')" style="margin-left:4px">Approve</button>
-                  <button class="btn btn-secondary btn-sm" onclick="updateStatus('${s.project_id}','revision')" style="margin-left:4px">Revise</button>
-                ` : '-'}
-              </td>
-            </tr>
-          `).join('')
-        }
-      </tbody></table></div>
-    </div>
-  `).join('');
+  tbody.innerHTML = groups.map(g => {
+    const studentNames = g.students && g.students.length ? g.students.map(s => s.full_name).join(', ') : '<span style="color:var(--gray-400)">No students</span>';
+    return `
+      <tr>
+        <td style="font-weight:600;color:var(--dark-blue-700)">${g.group_name}</td>
+        <td style="font-size:13px">${studentNames}</td>
+        <td>${g.title || '<span style="color:var(--gray-400)">Not submitted</span>'}</td>
+        <td><span class="badge ${STATUS_BADGE[g.status] || 'badge-gray'}">${g.status || 'no project'}</span></td>
+        <td style="color:var(--gray-400);font-size:13px">${g.submitted_at ? new Date(g.submitted_at).toLocaleDateString() : '-'}</td>
+        <td>
+          ${g.project_id ? `
+            <button class="btn btn-soft btn-sm" onclick="viewProject('${g.project_id}')">View</button>
+            <button class="btn btn-primary btn-sm" onclick="updateStatus('${g.project_id}','approved')" style="margin-left:4px">Approve</button>
+            <button class="btn btn-secondary btn-sm" onclick="updateStatus('${g.project_id}','revision')" style="margin-left:4px">Revise</button>
+          ` : '-'}
+        </td>
+      </tr>
+    `;
+  }).join('');
 }
 
 async function viewProject(id) {

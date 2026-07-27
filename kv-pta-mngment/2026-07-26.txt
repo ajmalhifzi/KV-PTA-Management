@@ -75,6 +75,8 @@ Meeting Logs:
 - meeting_logs table (id, project_id, author_id, meeting_date, notes, action_items, next_meeting, timestamps)
 - Teacher: GET /api/teacher/meetings, POST/PUT/DELETE meeting CRUD with auth scoping
 - Student: GET /api/student/meetings — read-only view of own project meetings
-- teacher/meetings.html: create form (student select, date, notes, action items, next meeting), date-grouped cards, edit/delete
+- teacher/meetings.html: create form (group select, date, notes, action items, next meeting), date-grouped cards, edit/delete
 - student/meetings.html: date-grouped cards showing teacher name, notes, action items, next meeting
 - Nav: Meeting Logs added to teacher sidebar, Meetings added to student sidebar
+- Fix: meetings page changed from student-select to group-select; uploads page `loadStudents`→`loadGroups`, `uploadForStudent`→`uploadForGroup`
+- Fix: teacher dashboard shows group-level project status row instead of per-student rows; project-detail shows group_name + student list

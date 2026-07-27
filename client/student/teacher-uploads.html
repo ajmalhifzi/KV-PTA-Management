@@ -30,7 +30,8 @@ if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Teacher Uploads');
 
 async function load() {
-  const uploads = await get('/api/student/teacher-uploads');
+  let uploads;
+  try { uploads = await get('/api/student/teacher-uploads'); } catch { uploads = []; }
   const container = document.getElementById('uploadsContainer');
 
   if (uploads.length === 0) {
@@ -70,6 +71,7 @@ async function load() {
                 <span>${u.teacher_name}</span>
                 <span>·</span>
                 <span class="badge ${badgeClass}" style="font-size:9px;padding:1px 6px">${u.category}</span>
+                ${u.file_type ? '<span>·</span><span class="badge badge-gray" style="font-size:9px;padding:1px 6px">' + u.file_type + '</span>' : ''}
                 <span>·</span>
                 <span>${timeStr}</span>
               </div>
