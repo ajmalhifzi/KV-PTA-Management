@@ -37,6 +37,14 @@ const ICONS = {
   'log-out': '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
 };
 
+const NOTIFICATION_ICONS = {
+  meeting: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  upload: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+  resource: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  comment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  project_status: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+};
+
 function renderSidebar() {
   const user = getUser();
   if (!user) return;
@@ -85,15 +93,121 @@ function renderHeader(title) {
   header.innerHTML = `
     <div class="page-title">${title}</div>
     <div class="header-right">
+      <div class="notif-container" style="position:relative">
+        <button class="notif-btn" onclick="toggleNotif()" style="background:none;border:none;cursor:pointer;position:relative;padding:6px;display:flex;align-items:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#c92a2a;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">0</span>
+        </button>
+        <div id="notifDropdown" class="notif-dropdown" style="display:none">
+          <div style="padding:10px 14px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:600;font-size:13px;color:var(--dark-blue-800)">Notifications</span>
+            <button class="btn btn-sm" style="font-size:10px;padding:2px 8px" onclick="markAllRead()">Mark all read</button>
+          </div>
+          <div id="notifList" style="max-height:360px;overflow-y:auto"></div>
+        </div>
+      </div>
       <div class="user-badge">
         <span>${user ? user.full_name : ''}</span>
         <div class="user-avatar">${initials}</div>
       </div>
     </div>
   `;
+  loadNotifCount();
 }
 
 function renderPage(title) {
   renderSidebar();
   renderHeader(title);
 }
+
+/* Notifications */
+async function loadNotifCount() {
+  try {
+    const { count } = await get('/api/notifications/unread-count');
+    const badge = document.getElementById('notifBadge');
+    if (count > 0) {
+      badge.textContent = count > 99 ? '99+' : count;
+      badge.style.display = 'flex';
+    } else {
+      badge.style.display = 'none';
+    }
+  } catch {}
+}
+
+async function loadNotifList() {
+  try {
+    const notifs = await get('/api/notifications');
+    const list = document.getElementById('notifList');
+    if (!notifs.length) {
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--gray-400);font-size:13px">No notifications</div>';
+      return;
+    }
+    list.innerHTML = notifs.map(n => `
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="clickNotif('${n.id}','${n.related_url || ''}')">
+        <div class="notif-icon">${NOTIFICATION_ICONS[n.type] || NOTIFICATION_ICONS.comment}</div>
+        <div class="notif-body">
+          <div class="notif-title">${n.title}</div>
+          ${n.message ? '<div class="notif-msg">' + n.message + '</div>' : ''}
+          <div class="notif-time">${timeAgo(n.created_at)}</div>
+        </div>
+        ${n.is_read ? '' : '<div style="width:8px;height:8px;border-radius:50%;background:var(--dark-blue-600);flex-shrink:0"></div>'}
+      </div>
+    `).join('');
+  } catch {}
+}
+
+function toggleNotif() {
+  const dd = document.getElementById('notifDropdown');
+  if (dd.style.display === 'none') {
+    dd.style.display = 'block';
+    loadNotifList();
+  } else {
+    dd.style.display = 'none';
+  }
+}
+
+async function clickNotif(id, url) {
+  try {
+    await api('/api/notifications/' + id + '/read', { method: 'PATCH' });
+  } catch {}
+  if (url) window.location.href = url;
+  else document.getElementById('notifDropdown').style.display = 'none';
+}
+
+async function markAllRead() {
+  try {
+    await api('/api/notifications/read-all', { method: 'PUT' });
+    loadNotifCount();
+    document.querySelectorAll('.notif-item').forEach(el => {
+      el.classList.remove('unread');
+      const dot = el.querySelector(':scope > div:last-child');
+      if (dot && dot.style) dot.style.display = 'none';
+    });
+  } catch {}
+}
+
+function timeAgo(val) {
+  const diff = Date.now() - new Date(val).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(val).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+}
+
+// Close notification dropdown on outside click
+document.addEventListener('click', function(e) {
+  const dd = document.getElementById('notifDropdown');
+  if (dd && dd.style.display !== 'none') {
+    const container = dd.closest('.notif-container');
+    if (container && !container.contains(e.target)) {
+      dd.style.display = 'none';
+    }
+  }
+});
+
+// Poll unread count every 30s
+setInterval(loadNotifCount, 30000);

@@ -101,7 +101,21 @@ CREATE TABLE meeting_logs (
 );
 CREATE INDEX idx_meeting_logs_project_id ON meeting_logs(project_id);
 
--- 10. Old FYP data (seeded mock data for AI idea recommendations)
+-- 10. Notifications (bell icon dropdown for all roles)
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  type VARCHAR(50) NOT NULL,
+  title VARCHAR(255) NOT NULL,
+  message TEXT,
+  related_url TEXT,
+  is_read BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read);
+
+-- 11. Old FYP data (seeded mock data for AI idea recommendations)
 CREATE TABLE old_fyp_data (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title VARCHAR(255) NOT NULL,

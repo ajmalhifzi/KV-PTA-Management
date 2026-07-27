@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const pool = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
+const { createNotification } = require('./notifications');
 
 const router = Router();
 router.use(authenticate, authorize('teacher'));
@@ -104,6 +105,22 @@ router.post('/projects/:projectId/comments', async (req, res) => {
   `, [req.params.projectId, req.user.id, content]);
 
   if (!rows.length) return res.status(404).json({ error: 'Project not found' });
+
+  const { rows: commentStudents } = await pool.query(
+    `SELECT tsa.student_id FROM teacher_student_assignments tsa
+     JOIN projects p ON p.group_id = tsa.group_id WHERE p.id = $1`,
+    [req.params.projectId]
+  );
+  for (const s of commentStudents) {
+    await createNotification({
+      userId: s.student_id,
+      type: 'comment',
+      title: 'New Comment',
+      message: content.length > 120 ? content.slice(0, 120) + '...' : content,
+      relatedUrl: '/student/comments.html'
+    });
+  }
+
   res.status(201).json(rows[0]);
 });
 
@@ -145,6 +162,21 @@ router.post('/upload-for-group', async (req, res) => {
     'INSERT INTO project_uploads (project_id, student_id, teacher_id, file_name, file_data, file_type, category) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
     [project.rows[0].id, req.user.id, req.user.id, file_name, file_data, file_type || null, category || 'supplementary']
   );
+
+  const { rows: uploadStudents } = await pool.query(
+    'SELECT student_id FROM teacher_student_assignments WHERE group_id = $1',
+    [group_id]
+  );
+  for (const s of uploadStudents) {
+    await createNotification({
+      userId: s.student_id,
+      type: 'upload',
+      title: 'New File Uploaded',
+      message: 'Your teacher uploaded: ' + file_name,
+      relatedUrl: '/student/teacher-uploads.html'
+    });
+  }
+
   res.status(201).json(rows[0]);
 });
 
@@ -165,6 +197,21 @@ router.post('/resources', async (req, res) => {
     'INSERT INTO resource_files (teacher_id, title, file_data, file_type) VALUES ($1, $2, $3, $4) RETURNING *',
     [req.user.id, title, file_data, file_type || null]
   );
+
+  const { rows: resourceStudents } = await pool.query(
+    'SELECT student_id FROM teacher_student_assignments WHERE teacher_id = $1',
+    [req.user.id]
+  );
+  for (const s of resourceStudents) {
+    await createNotification({
+      userId: s.student_id,
+      type: 'resource',
+      title: 'New Resource Available',
+      message: 'Your teacher shared: ' + title,
+      relatedUrl: '/student/resources.html'
+    });
+  }
+
   res.status(201).json(rows[0]);
 });
 
@@ -205,6 +252,22 @@ router.post('/projects/:projectId/meetings', async (req, res) => {
   `, [projectId, req.user.id, meeting_date, notes, action_items || null, next_meeting || null]);
 
   if (!rows.length) return res.status(404).json({ error: 'Project not found' });
+
+  const { rows: meetingStudents } = await pool.query(
+    `SELECT tsa.student_id FROM teacher_student_assignments tsa
+     JOIN projects p ON p.group_id = tsa.group_id WHERE p.id = $1`,
+    [projectId]
+  );
+  for (const s of meetingStudents) {
+    await createNotification({
+      userId: s.student_id,
+      type: 'meeting',
+      title: 'New Meeting Log',
+      message: notes.length > 120 ? notes.slice(0, 120) + '...' : notes,
+      relatedUrl: '/student/meetings.html'
+    });
+  }
+
   res.status(201).json(rows[0]);
 });
 

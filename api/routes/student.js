@@ -1,7 +1,7 @@
 const { Router } = require('express');
 const pool = require('../db');
 const { authenticate, authorize } = require('../middleware/auth');
-
+const { createNotification } = require('./notifications');
 
 const router = Router();
 router.use(authenticate, authorize('student'));
@@ -113,6 +113,22 @@ router.post('/project/submit', async (req, res) => {
     RETURNING p.*
   `, ['submitted', req.user.id, 'draft']);
   if (!rowCount) return res.status(400).json({ error: 'No draft project to submit, or already submitted' });
+
+  const { rows: submitTeachers } = await pool.query(
+    `SELECT g.teacher_id FROM teacher_student_assignments tsa
+     JOIN groups g ON g.id = tsa.group_id WHERE tsa.student_id = $1`,
+    [req.user.id]
+  );
+  if (submitTeachers.length) {
+    await createNotification({
+      userId: submitTeachers[0].teacher_id,
+      type: 'project_status',
+      title: 'Project Submitted',
+      message: 'Your student has submitted their project for review.',
+      relatedUrl: '/teacher/dashboard.html'
+    });
+  }
+
   res.json(rows[0]);
 });
 
@@ -144,6 +160,22 @@ router.post('/comments', async (req, res) => {
     'INSERT INTO comments (project_id, author_id, content) VALUES ($1, $2, $3) RETURNING *',
     [project.rows[0].id, req.user.id, content]
   );
+
+  const { rows: commentTeachers } = await pool.query(
+    `SELECT g.teacher_id FROM teacher_student_assignments tsa
+     JOIN groups g ON g.id = tsa.group_id WHERE tsa.student_id = $1`,
+    [req.user.id]
+  );
+  if (commentTeachers.length) {
+    await createNotification({
+      userId: commentTeachers[0].teacher_id,
+      type: 'comment',
+      title: 'New Comment from Student',
+      message: content.length > 120 ? content.slice(0, 120) + '...' : content,
+      relatedUrl: '/teacher/dashboard.html'
+    });
+  }
+
   res.status(201).json(rows[0]);
 });
 
@@ -175,6 +207,22 @@ router.post('/uploads', async (req, res) => {
     'INSERT INTO project_uploads (project_id, student_id, file_name, file_data, file_type, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
     [project.rows[0].id, req.user.id, file_name, file_data, file_type || null, category || 'supplementary']
   );
+
+  const { rows: uploadTeachers } = await pool.query(
+    `SELECT g.teacher_id FROM teacher_student_assignments tsa
+     JOIN groups g ON g.id = tsa.group_id WHERE tsa.student_id = $1`,
+    [req.user.id]
+  );
+  if (uploadTeachers.length) {
+    await createNotification({
+      userId: uploadTeachers[0].teacher_id,
+      type: 'upload',
+      title: 'New File Submitted',
+      message: 'Your student uploaded: ' + file_name,
+      relatedUrl: '/teacher/uploads.html'
+    });
+  }
+
   res.status(201).json(rows[0]);
 });
 
