@@ -49,25 +49,29 @@ if (!projectId) window.location.href = '/teacher/dashboard.html';
 renderPage('Project Detail');
 
 async function load() {
-  const project = await get(`/api/teacher/projects/${projectId}`);
-  document.getElementById('projectInfo').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
-      <div>
-        <h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)">${project.title}</h2>
-        <p style="font-size:13px;color:var(--gray-500)">Group: ${project.group_name}</p>
-        <p style="font-size:12px;color:var(--gray-400)">${project.students && project.students.length ? project.students.map(s => s.full_name).join(', ') : ''}</p>
+  try {
+    const project = await get(`/api/teacher/projects/${projectId}`);
+    document.getElementById('projectInfo').innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
+        <div>
+          <h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)">${project.title}</h2>
+          <p style="font-size:13px;color:var(--gray-500)">Group: ${project.group_name}</p>
+          <p style="font-size:12px;color:var(--gray-400)">${project.students && project.students.length ? project.students.map(s => s.full_name).join(', ') : ''}</p>
+        </div>
+        <div><span class="badge ${project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray'}">${project.status}</span></div>
       </div>
-      <div><span class="badge ${project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray'}">${project.status}</span></div>
-    </div>
-    <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Objective</div><div style="font-size:14px">${project.objective}</div></div>
-      <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Purpose</div><div style="font-size:14px">${project.purpose}</div></div>
-      <div style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Scope</div><div style="font-size:14px">${project.scope}</div></div>
-    </div>
-    <div id="githubSection" style="display:none"></div>
-  `;
-  loadComments();
-  loadGitHubCommits();
+      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Objective</div><div style="font-size:14px">${project.objective}</div></div>
+        <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Purpose</div><div style="font-size:14px">${project.purpose}</div></div>
+        <div style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Scope</div><div style="font-size:14px">${project.scope}</div></div>
+      </div>
+      <div id="githubSection" style="display:none"></div>
+    `;
+    loadComments();
+    loadGitHubCommits();
+  } catch (e) {
+    console.error('load error:', e);
+  }
 }
 
 async function loadComments() {
@@ -146,7 +150,8 @@ async function loadGitHubCommits() {
       list.appendChild(commitEl);
       loadCommitComments(c.sha);
     }
-  } catch {
+  } catch (e) {
+    console.error('loadGitHubCommits error:', e);
     section.style.display = 'none';
   }
 }
