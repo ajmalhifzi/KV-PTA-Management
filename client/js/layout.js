@@ -8,6 +8,7 @@ const NAV = {
     { label: 'Files', icon: 'upload', href: '/admin/files.html' },
     { label: 'Error Logs', icon: 'alert-circle', href: '/admin/error-logs.html' },
     { label: 'Seed Data', icon: 'database', href: '/admin/seed.html' },
+    { label: 'GitHub', icon: 'book-open', href: '/admin/github-activity.html' },
   ],
   teacher: [
     { label: 'Dashboard', icon: 'grid', href: '/teacher/dashboard.html' },

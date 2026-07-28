@@ -308,4 +308,67 @@ router.delete('/resources/:id', async (req, res) => {
   res.json({ message: 'Resource deleted' });
 });
 
+router.get('/github-activity', async (req, res) => {
+  const [connectedCount, linkedCount, activityCount, teacherCount, connections, events] = await Promise.all([
+    pool.query('SELECT COUNT(*)::int FROM github_connections'),
+    pool.query("SELECT COUNT(*)::int FROM projects WHERE github_repo_url IS NOT NULL"),
+    pool.query(`
+      SELECT COUNT(*)::int FROM notifications
+      WHERE type = 'upload' AND title LIKE 'New Commits%'
+        AND created_at > NOW() - INTERVAL '7 days'
+    `),
+    pool.query(`
+      SELECT COUNT(DISTINCT g.teacher_id)::int AS count
+      FROM notifications n
+      JOIN teacher_student_assignments tsa ON tsa.student_id = n.user_id
+      JOIN groups g ON g.id = tsa.group_id
+      WHERE n.type = 'comment' AND n.title = 'New Comment on Commit'
+    `),
+    pool.query(`
+      SELECT u.id AS student_id, u.full_name, u.email,
+             gc.github_username, gc.created_at AS connected_at,
+             p.title AS project_title, p.github_repo_url,
+             p.updated_at AS repo_updated_at,
+             g.group_name, t.full_name AS teacher_name
+      FROM github_connections gc
+      JOIN users u ON u.id = gc.user_id
+      LEFT JOIN teacher_student_assignments tsa ON tsa.student_id = u.id
+      LEFT JOIN groups g ON g.id = tsa.group_id
+      LEFT JOIN projects p ON p.group_id = g.id
+      LEFT JOIN users t ON t.id = g.teacher_id
+      ORDER BY gc.created_at DESC
+    `),
+    pool.query(`
+      SELECT n.type, n.title, n.message, n.created_at,
+             COALESCE(g.group_name, '(unknown)') AS group_name,
+             COALESCE(p.title, '(unknown)') AS project_title,
+             COALESCE(t.full_name, '(unknown)') AS teacher_name
+      FROM notifications n
+      LEFT JOIN teacher_student_assignments tsa ON
+        ((n.type = 'comment') AND tsa.student_id = n.user_id)
+        OR ((n.type IN ('project_status', 'upload')) AND tsa.teacher_id = n.user_id)
+      LEFT JOIN groups g ON g.id = tsa.group_id
+      LEFT JOIN projects p ON p.group_id = g.id
+      LEFT JOIN users t ON t.id = g.teacher_id
+      WHERE n.type IN ('project_status', 'upload', 'comment')
+        AND ((n.type = 'project_status' AND n.title = 'GitHub Repo Linked')
+          OR (n.type = 'upload' AND n.title LIKE 'New Commits%')
+          OR (n.type = 'comment' AND n.title = 'New Comment on Commit'))
+      ORDER BY n.created_at DESC
+      LIMIT 50
+    `),
+  ]);
+
+  res.json({
+    summary: {
+      connected_students: connectedCount.rows[0].count,
+      linked_repos: linkedCount.rows[0].count,
+      active_last_7d: activityCount.rows[0].count,
+      teachers_with_engagement: teacherCount.rows[0].count,
+    },
+    connections: connections.rows,
+    recent_events: events.rows,
+  });
+});
+
 module.exports = router;
