@@ -132,6 +132,16 @@ async function loadNotifCount() {
       badge.style.display = 'none';
     }
   } catch {}
+  checkNewCommits();
+}
+
+async function checkNewCommits() {
+  try {
+    const user = getUser();
+    if (user && user.role === 'teacher') {
+      await get('/api/github/check-all-commits');
+    }
+  } catch {}
 }
 
 async function loadNotifList() {

@@ -127,6 +127,21 @@ CREATE TABLE old_fyp_data (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+-- 12. GitHub OAuth connections
+CREATE TABLE github_connections (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  github_username VARCHAR(255),
+  access_token TEXT NOT NULL,
+  refresh_token TEXT,
+  expires_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Add last_known_commit_sha to projects for push detection
+ALTER TABLE projects ADD COLUMN IF NOT EXISTS last_known_commit_sha TEXT;
+
 -- Indexes
 CREATE INDEX idx_groups_teacher_id ON groups(teacher_id);
 CREATE INDEX idx_projects_group_id ON projects(group_id);

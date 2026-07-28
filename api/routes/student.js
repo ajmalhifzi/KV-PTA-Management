@@ -9,7 +9,7 @@ router.use(authenticate, authorize('student'));
 router.get('/group', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT g.*, u.full_name AS teacher_name, u.email AS teacher_email,
-           p.id AS project_id, p.title, p.objective, p.purpose, p.scope, p.status, p.submitted_at
+           p.id AS project_id, p.title, p.objective, p.purpose, p.scope, p.status, p.submitted_at, p.github_repo_url
     FROM teacher_student_assignments tsa
     JOIN groups g ON g.id = tsa.group_id
     JOIN users u ON u.id = g.teacher_id

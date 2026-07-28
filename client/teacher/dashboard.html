@@ -15,7 +15,7 @@
     <div class="stat-grid" id="statCards"></div>
     <div class="card" style="padding:0">
       <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Groups & Projects</div>
-      <div class="table-container"><table><thead><tr><th>Group</th><th>Students</th><th>Project</th><th>Status</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="groupsTableBody"></tbody></table></div>
+      <div class="table-container"><table><thead><tr><th>Group</th><th>Students</th><th>Project</th><th>Status</th><th>GitHub</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="groupsTableBody"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -30,9 +30,13 @@ renderPage('Dashboard');
 
 const STATUS_BADGE = { draft: 'badge-gray', submitted: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', revision: 'badge-yellow' };
 
+let githubRepos = [];
+
 async function load() {
   let groups;
   try { groups = await get('/api/teacher/groups'); } catch { groups = []; }
+  try { githubRepos = await get('/api/github/teacher-repos'); } catch { githubRepos = []; }
+
   let allStudents = [];
   groups.forEach(g => { if (g.students) allStudents = allStudents.concat(g.students); });
 
@@ -41,6 +45,8 @@ async function load() {
     if (s.status === 'submitted' || s.status === 'revision') stats.pending++;
     else if (s.status === 'approved') stats.approved++;
   });
+
+  const linkedCount = githubRepos.length;
 
   document.getElementById('statCards').innerHTML = `
     <div class="card stat-card"><div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-number">${stats.groups}</div><div class="stat-label">Groups</div></div></div>
@@ -51,18 +57,37 @@ async function load() {
 
   const tbody = document.getElementById('groupsTableBody');
   if (groups.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="6" class="empty-state" style="padding:32px"><p>No groups assigned to you yet</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:32px"><p>No groups assigned to you yet</p></td></tr>';
     return;
   }
 
+  const repoMap = {};
+  githubRepos.forEach(r => { repoMap[r.projectId] = r; });
+
   tbody.innerHTML = groups.map(g => {
     const studentNames = g.students && g.students.length ? g.students.map(s => s.full_name).join(', ') : '<span style="color:var(--gray-400)">No students</span>';
+    const gh = g.project_id ? repoMap[g.project_id] : null;
+
+    let githubCell = '<span style="color:var(--gray-400);font-size:12px">-</span>';
+    if (gh) {
+      const lastCommitDate = gh.lastCommit ? timeAgo(gh.lastCommit.date) : 'No commits';
+      const dotColor = gh.lastCommit ? (Date.now() - new Date(gh.lastCommit.date).getTime() < 86400000 ? 'var(--badge-green)' : Date.now() - new Date(gh.lastCommit.date).getTime() < 604800000 ? 'var(--badge-yellow)' : 'var(--gray-400)') : 'var(--gray-400)';
+      githubCell = `
+        <div style="display:flex;align-items:center;gap:4px">
+          <a href="${gh.repoUrl}" target="_blank" title="${gh.repoFullName}" style="color:var(--dark-blue-600);text-decoration:none;font-size:12px;font-weight:600">${gh.repoFullName.split('/')[1]}</a>
+          <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0" title="${lastCommitDate}"></span>
+        </div>
+        <div style="font-size:11px;color:var(--gray-400)">${lastCommitDate}</div>
+      `;
+    }
+
     return `
       <tr>
         <td style="font-weight:600;color:var(--dark-blue-700)">${g.group_name}</td>
         <td style="font-size:13px">${studentNames}</td>
         <td>${g.title || '<span style="color:var(--gray-400)">Not submitted</span>'}</td>
         <td><span class="badge ${STATUS_BADGE[g.status] || 'badge-gray'}">${g.status || 'no project'}</span></td>
+        <td style="font-size:12px">${githubCell}</td>
         <td style="color:var(--gray-400);font-size:13px">${g.submitted_at ? new Date(g.submitted_at).toLocaleDateString() : '-'}</td>
         <td>
           ${g.project_id ? `

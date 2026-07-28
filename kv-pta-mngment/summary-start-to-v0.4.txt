@@ -1,0 +1,72 @@
+KV PTA MANAGEMENT — COMPLETE SYSTEM SUMMARY (Start → v0.4-checkpoint)
+=====================================================================
+
+STACK
+  - Backend: Node.js, Express 5, PostgreSQL (Supabase)
+  - Frontend: Vanilla HTML + Tailwind (CDN) + Vanilla JS
+  - Auth: JWT + bcrypt (7-day tokens)
+  - File storage: Base64 in PostgreSQL (bypassed Cloudflare WAF on supabase.co)
+  - Deployment: Vercel (FE + BE)
+
+PROJECT OVERVIEW
+  A Final Year Project (FYP) supervision platform for KV (Kolej Vokasional).
+  One course (Web Application and Database Management), ~5+ teachers, ~20-40 students, 1 admin.
+  Teacher creates groups, admin assigns students to groups, students work on shared per-group projects.
+
+DATABASE TABLES (11)
+  users, groups, teacher_student_assignments, projects, comments,
+  resource_files, project_uploads, meeting_logs, notifications,
+  error_logs, old_fyp_data
+
+ROLES & PAGES
+  Admin (8 pages):
+    overview, users, groups, teachers, students, files, error-logs, seed
+  Teacher (4 pages):
+    dashboard, meeting-logs, resources, student-uploads
+  Student (6 pages):
+    my-project, meetings, comments, resources, uploads, from-teacher
+
+CORE FEATURES IMPLEMENTED
+  1. Auth: register, login, JWT role-based middleware
+  2. Per-group projects (shared by all students in a group, not per-student)
+  3. Project workflow: draft → submitted → approved/rejected/revision
+  4. File uploads (base64 in DB, formal/supplementary categories, file type detection)
+  5. Teacher resources (shared with all assigned students)
+  6. Comment threads per project (teacher ↔ students)
+  7. Meeting logs (CRUD for teacher, read-only for students)
+     - Date-time picker button UI (separate date + time inputs in popup)
+     - Timezone-safe (localToISO helper with offset)
+     - Group selection in edit modal
+  8. Notifications (bell icon in header)
+     - Types: meeting, upload, resource, comment, project_status
+     - Unread count badge, dropdown list, mark-as-read, mark-all-read
+     - 30s polling, time-ago display, outside-click dismiss
+  9. Admin management: users CRUD, group CRUD, student-teacher assignment (single + bulk)
+  10. Error logging & monitoring (admin error-logs page)
+  11. FYP idea seeding (admin seed page for old_fyp_data)
+  12. Auto-refresh polling (5s on active pages, 10s on dashboards)
+  13. Date-grouped card layout across all file/meeting listing pages
+  14. Collapsible sidebar (persisted in localStorage)
+
+NOTABLE FIXES & DECISIONS
+  - Per-group architecture: projects use group_id UNIQUE NOT NULL instead of student_id
+  - File storage in DB base64 to avoid Cloudflare WAF blocking Supabase Storage
+  - Malaysia timezone (Asia/Kuala_Lumpur) hardcoded for all date displays
+  - file_type column added to project_uploads for inline content-type serving
+  - meeting_logs columns changed from DATE to TIMESTAMPTZ for time support
+  - fmtDatetime with try/catch + timeZone fallback to handle browser locale issues
+
+MISSING FEATURES (identified)
+  - Profile/password change (self-service for users)
+  - Forgot password flow
+  - GitHub integration (planned next)
+  - AI idea recommendation system (old_fyp_data table exists, no frontend)
+  - Project grading/evaluation
+  - Email notifications
+  - Search/filter across users, files, projects
+  - Activity log / audit trail
+
+BACKUP TAGS
+  v0.3-meeting-logs
+  v0.4-notifications
+  v0.4-checkpoint

@@ -75,6 +75,7 @@ app.use('/api/admin', require('./routes/admin'));
 app.use('/api/teacher', require('./routes/teacher'));
 app.use('/api/student', require('./routes/student'));
 app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/github', require('./routes/github'));
 
 app.use(express.static(clientPath));
 
