@@ -108,7 +108,6 @@ async function loadGitHubCommits() {
   if (!section) return;
   try {
     const summary = await get('/api/github/repo-summary/' + projectId);
-    console.log('repo-summary response:', JSON.stringify(summary));
     if (!summary.linked) { section.style.display = 'none'; return; }
     section.style.display = 'block';
 

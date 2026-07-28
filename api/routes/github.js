@@ -165,10 +165,14 @@ router.get('/commits/:projectId', authorize('teacher'), async (req, res) => {
   const { limit = 30 } = req.query;
 
   const { rows: projects } = await pool.query(`
-    SELECT p.github_repo_url, tsa.student_id FROM projects p
+    SELECT DISTINCT ON (p.id) p.github_repo_url, tsa.student_id,
+      gc.access_token
+    FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN github_connections gc ON gc.user_id = tsa.student_id
     WHERE p.id = $1 AND g.teacher_id = $2
+    ORDER BY p.id, gc.access_token DESC NULLS LAST
     LIMIT 1
   `, [req.params.projectId, req.user.id]);
 
@@ -179,12 +183,7 @@ router.get('/commits/:projectId', authorize('teacher'), async (req, res) => {
   if (!repoMatch) return res.json([]);
   const repoFullName = repoMatch[1];
 
-  const { rows: connections } = await pool.query(
-    'SELECT access_token FROM github_connections WHERE user_id = $1',
-    [projects[0].student_id]
-  );
-
-  const token = connections.length ? connections[0].access_token : null;
+  const token = projects[0].access_token;
   const headers = { 'Accept': 'application/vnd.github.v3+json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -208,10 +207,14 @@ router.get('/commits/:projectId', authorize('teacher'), async (req, res) => {
 
 router.get('/commits/:projectId/:sha/comments', authorize('teacher'), async (req, res) => {
   const { rows: projects } = await pool.query(`
-    SELECT p.github_repo_url, tsa.student_id FROM projects p
+    SELECT DISTINCT ON (p.id) p.github_repo_url,
+      gc.access_token
+    FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN github_connections gc ON gc.user_id = tsa.student_id
     WHERE p.id = $1 AND g.teacher_id = $2
+    ORDER BY p.id, gc.access_token DESC NULLS LAST
     LIMIT 1
   `, [req.params.projectId, req.user.id]);
 
@@ -221,12 +224,7 @@ router.get('/commits/:projectId/:sha/comments', authorize('teacher'), async (req
   if (!repoMatch) return res.json([]);
   const repoFullName = repoMatch[1];
 
-  const { rows: connections } = await pool.query(
-    'SELECT access_token FROM github_connections WHERE user_id = $1',
-    [projects[0].student_id]
-  );
-
-  const token = connections.length ? connections[0].access_token : null;
+  const token = projects[0].access_token;
   const headers = { 'Accept': 'application/vnd.github.v3+json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -252,10 +250,14 @@ router.post('/commits/:projectId/:sha/comments', authorize('teacher'), async (re
   if (!body) return res.status(400).json({ error: 'Comment body required' });
 
   const { rows: projects } = await pool.query(`
-    SELECT p.github_repo_url, tsa.student_id FROM projects p
+    SELECT DISTINCT ON (p.id) p.github_repo_url, tsa.student_id,
+      gc.access_token
+    FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN github_connections gc ON gc.user_id = tsa.student_id
     WHERE p.id = $1 AND g.teacher_id = $2
+    ORDER BY p.id, gc.access_token DESC NULLS LAST
     LIMIT 1
   `, [req.params.projectId, req.user.id]);
 
@@ -265,12 +267,7 @@ router.post('/commits/:projectId/:sha/comments', authorize('teacher'), async (re
   if (!repoMatch) return res.status(400).json({ error: 'Invalid repo URL' });
   const repoFullName = repoMatch[1];
 
-  const { rows: connections } = await pool.query(
-    'SELECT access_token FROM github_connections WHERE user_id = $1',
-    [projects[0].student_id]
-  );
-
-  const token = connections.length ? connections[0].access_token : null;
+  const token = projects[0].access_token;
   if (!token) return res.status(400).json({ error: 'No GitHub token available for this project' });
 
   const commentRes = await fetch(
@@ -312,10 +309,14 @@ router.post('/commits/:projectId/:sha/comments', authorize('teacher'), async (re
 
 router.get('/repo-summary/:projectId', authorize('teacher'), async (req, res) => {
   const { rows: projects } = await pool.query(`
-    SELECT p.github_repo_url, tsa.student_id FROM projects p
+    SELECT DISTINCT ON (p.id) p.github_repo_url, tsa.student_id,
+      gc.access_token
+    FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN github_connections gc ON gc.user_id = tsa.student_id
     WHERE p.id = $1 AND g.teacher_id = $2
+    ORDER BY p.id, gc.access_token DESC NULLS LAST
     LIMIT 1
   `, [req.params.projectId, req.user.id]);
 
@@ -326,12 +327,7 @@ router.get('/repo-summary/:projectId', authorize('teacher'), async (req, res) =>
   if (!repoMatch) return res.json({ linked: true, error: 'Invalid repo URL' });
   const repoFullName = repoMatch[1];
 
-  const { rows: connections } = await pool.query(
-    'SELECT access_token FROM github_connections WHERE user_id = $1',
-    [projects[0].student_id]
-  );
-
-  const token = connections.length ? connections[0].access_token : null;
+  const token = projects[0].access_token;
   const headers = { 'Accept': 'application/vnd.github.v3+json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -368,10 +364,14 @@ router.get('/repo-summary/:projectId', authorize('teacher'), async (req, res) =>
 
 router.get('/check-commits/:projectId', authorize('teacher'), async (req, res) => {
   const { rows: projects } = await pool.query(`
-    SELECT p.id, p.github_repo_url, p.last_known_commit_sha, tsa.student_id FROM projects p
+    SELECT DISTINCT ON (p.id) p.id, p.github_repo_url, p.last_known_commit_sha,
+      gc.access_token
+    FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
+    LEFT JOIN github_connections gc ON gc.user_id = tsa.student_id
     WHERE p.id = $1 AND g.teacher_id = $2
+    ORDER BY p.id, gc.access_token DESC NULLS LAST
     LIMIT 1
   `, [req.params.projectId, req.user.id]);
 
@@ -381,12 +381,7 @@ router.get('/check-commits/:projectId', authorize('teacher'), async (req, res) =
   if (!repoMatch) return res.json({ newCommits: false });
   const repoFullName = repoMatch[1];
 
-  const { rows: connections } = await pool.query(
-    'SELECT access_token FROM github_connections WHERE user_id = $1',
-    [projects[0].student_id]
-  );
-
-  const token = connections.length ? connections[0].access_token : null;
+  const token = projects[0].access_token;
   const headers = { 'Accept': 'application/vnd.github.v3+json' };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
