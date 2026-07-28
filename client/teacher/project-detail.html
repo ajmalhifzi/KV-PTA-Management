@@ -67,6 +67,7 @@ async function load() {
     <div id="githubSection" style="display:none"></div>
   `;
   loadComments();
+  loadGitHubCommits();
 }
 
 async function loadComments() {
@@ -186,8 +187,7 @@ async function addCommitComment(sha) {
 }
 
 load();
-loadGitHubCommits();
-setInterval(() => { load(); loadGitHubCommits(); }, 10000);
+setInterval(load, 10000);
 </script>
 </body>
 </html>
