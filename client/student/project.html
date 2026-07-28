@@ -30,6 +30,54 @@
           <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Purpose</div><div style="font-size:14px" id="projPurpose"></div></div>
           <div style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Scope</div><div style="font-size:14px" id="projScope"></div></div>
         </div>
+
+        <div id="githubSection" style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200);display:none">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              <span style="font-size:13px;font-weight:600;color:var(--dark-blue-800)">GitHub Repository</span>
+            </div>
+            <span id="githubStatusBadge" class="badge badge-gray" style="display:none;font-size:10px"></span>
+          </div>
+
+          <div id="githubNotConnected" style="display:none">
+            <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Connect your GitHub account to link a repository to this project.</p>
+            <button class="btn btn-primary btn-sm" onclick="connectGitHub()" style="font-size:12px">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:4px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+              Connect GitHub
+            </button>
+          </div>
+
+          <div id="githubConnected" style="display:none">
+            <div style="font-size:12px;color:var(--gray-500);margin-bottom:6px">Connected as <strong id="githubUsername" style="color:var(--dark-blue-700)"></strong></div>
+            <div id="githubNoRepo" style="display:none">
+              <button class="btn btn-primary btn-sm" onclick="showLinkRepoModal()" style="font-size:12px">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                Link Repository
+              </button>
+            </div>
+            <div id="githubRepoLinked" style="display:none">
+              <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                <a id="githubRepoLink" href="#" target="_blank" style="font-size:13px;font-weight:600;color:var(--dark-blue-600);text-decoration:none;display:flex;align-items:center;gap:4px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                  <span id="githubRepoName"></span>
+                </a>
+                <span id="repoPrivateBadge" class="badge badge-gray" style="font-size:9px;display:none">Private</span>
+                <span id="repoLangBadge" class="badge badge-blue" style="font-size:9px;display:none"></span>
+              </div>
+              <div style="margin-top:4px;font-size:11px;color:var(--gray-400)" id="repoLastCommit"></div>
+              <div id="githubCommitArea" style="margin-top:8px;display:none">
+                <div style="font-size:12px;font-weight:600;color:var(--dark-blue-700);margin-bottom:4px">Recent Commits & Feedback</div>
+                <div id="commitListStudent" style="max-height:200px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:4px;padding:6px">
+                  <div style="text-align:center;padding:8px;color:var(--gray-400);font-size:11px">Loading commits...</div>
+                </div>
+              </div>
+              <div style="margin-top:6px">
+                <button class="btn btn-secondary btn-sm" onclick="unlinkRepo()" style="color:var(--badge-red);font-size:11px">Unlink</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="card" id="teacherInfo" style="margin-bottom:16px;display:none"></div>
     </div>
@@ -46,50 +94,6 @@
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary" onclick="saveProject()">Save</button>
           <button class="btn btn-secondary" onclick="cancelEdit()">Cancel</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card" id="githubSection" style="margin-bottom:16px;display:none">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:8px">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-          <span style="font-size:14px;font-weight:600;color:var(--dark-blue-800)">GitHub Integration</span>
-        </div>
-        <span id="githubStatusBadge" class="badge badge-gray" style="display:none"></span>
-      </div>
-      <div id="githubNotConnected" style="margin-top:12px;display:none">
-        <p style="font-size:13px;color:var(--gray-500);margin-bottom:10px">Connect your GitHub account to link a repository to this project.</p>
-        <button class="btn btn-primary btn-sm" onclick="connectGitHub()">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right:6px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-          Connect GitHub
-        </button>
-      </div>
-      <div id="githubConnected" style="margin-top:12px;display:none">
-        <div style="font-size:13px;color:var(--gray-600);margin-bottom:8px">Connected as <strong id="githubUsername"></strong></div>
-        <div id="githubNoRepo" style="display:none">
-          <p style="font-size:13px;color:var(--gray-500);margin-bottom:10px">No repository linked yet. Choose a repository to link to this project.</p>
-          <button class="btn btn-primary btn-sm" onclick="showLinkRepoModal()">Link Repository</button>
-        </div>
-        <div id="githubCommitsArea" style="margin-top:12px;display:none">
-        <div style="font-size:13px;font-weight:600;color:var(--dark-blue-700);margin-bottom:6px">Recent Commits & Feedback</div>
-        <div id="commitListStudent" style="max-height:300px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:6px;padding:8px">
-          <div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Loading commits...</div>
-        </div>
-      </div>
-      <div id="githubRepoLinked" style="display:none">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <a id="githubRepoLink" href="#" target="_blank" style="font-size:14px;font-weight:600;color:var(--dark-blue-600);text-decoration:none;display:flex;align-items:center;gap:4px">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-              <span id="githubRepoName"></span>
-            </a>
-            <span id="repoPrivateBadge" class="badge badge-gray" style="font-size:10px;display:none">Private</span>
-            <span id="repoLangBadge" class="badge badge-blue" style="font-size:10px;display:none"></span>
-          </div>
-          <div style="margin-top:8px;font-size:12px;color:var(--gray-400)" id="repoLastCommit"></div>
-          <div style="margin-top:10px">
-            <button class="btn btn-secondary btn-sm" onclick="unlinkRepo()" style="color:var(--badge-red)">Unlink Repository</button>
-          </div>
         </div>
       </div>
     </div>
@@ -147,6 +151,53 @@ async function load() {
 
     document.getElementById('teacherInfo').style.display = 'block';
     document.getElementById('teacherInfo').innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Assigned Teacher</div><div style="font-size:14px;font-weight:600;color:var(--dark-blue-700)">' + data.teacher_name + ' (' + data.teacher_email + ')</div>';
+
+    if (hasProject) {
+      const statusRes = await get('/api/github/status');
+      const githubSection = document.getElementById('githubSection');
+      githubSection.style.display = 'block';
+
+      if (statusRes.connected) {
+        document.getElementById('githubNotConnected').style.display = 'none';
+        document.getElementById('githubConnected').style.display = 'block';
+        document.getElementById('githubUsername').textContent = statusRes.github_username;
+
+        if (data.github_repo_url) {
+          document.getElementById('githubNoRepo').style.display = 'none';
+          document.getElementById('githubRepoLinked').style.display = 'block';
+
+          const repoFullName = data.github_repo_url.replace('https://github.com/', '');
+          document.getElementById('githubRepoName').textContent = repoFullName;
+          document.getElementById('githubRepoLink').href = data.github_repo_url;
+
+          const badge = document.getElementById('githubStatusBadge');
+          badge.textContent = 'Repo Linked';
+          badge.className = 'badge badge-green';
+          badge.style.display = 'inline-block';
+
+          const summary = await get('/api/github/my-repo-summary');
+          if (summary.linked && summary.lastCommit) {
+            document.getElementById('repoLastCommit').textContent = 'Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author;
+          }
+          if (summary.language) {
+            document.getElementById('repoLangBadge').textContent = summary.language;
+            document.getElementById('repoLangBadge').style.display = 'inline-block';
+          }
+          if (summary.private) {
+            document.getElementById('repoPrivateBadge').style.display = 'inline-block';
+          }
+          loadStudentCommits();
+        } else {
+          document.getElementById('githubNoRepo').style.display = 'block';
+          document.getElementById('githubRepoLinked').style.display = 'none';
+          document.getElementById('githubStatusBadge').style.display = 'none';
+        }
+      } else {
+        document.getElementById('githubNotConnected').style.display = 'block';
+        document.getElementById('githubConnected').style.display = 'none';
+        document.getElementById('githubStatusBadge').style.display = 'none';
+      }
+    }
   } catch {
     document.getElementById('projectView').style.display = 'none';
     document.getElementById('noProject').style.display = 'block';
@@ -201,67 +252,11 @@ async function submitProject() {
 }
 
 /* GitHub Integration */
-async function checkGitHub() {
-  try {
-    const status = await get('/api/github/status');
-    const githubSection = document.getElementById('githubSection');
-    githubSection.style.display = 'block';
-
-    if (status.connected) {
-      document.getElementById('githubNotConnected').style.display = 'none';
-      document.getElementById('githubConnected').style.display = 'block';
-      document.getElementById('githubUsername').textContent = status.github_username;
-
-      const data = await get('/api/student/group');
-      if (data.github_repo_url) {
-        document.getElementById('githubNoRepo').style.display = 'none';
-        document.getElementById('githubRepoLinked').style.display = 'block';
-
-        const repoFullName = data.github_repo_url.replace('https://github.com/', '');
-        document.getElementById('githubRepoName').textContent = repoFullName;
-        document.getElementById('githubRepoLink').href = data.github_repo_url;
-
-        const badge = document.getElementById('githubStatusBadge');
-        badge.textContent = 'Repo Linked';
-        badge.className = 'badge badge-green';
-        badge.style.display = 'inline-block';
-
-        loadRepoInfo(repoFullName);
-      } else {
-        document.getElementById('githubNoRepo').style.display = 'block';
-        document.getElementById('githubRepoLinked').style.display = 'none';
-        document.getElementById('githubStatusBadge').style.display = 'none';
-      }
-    } else {
-      document.getElementById('githubNotConnected').style.display = 'block';
-      document.getElementById('githubConnected').style.display = 'none';
-      document.getElementById('githubStatusBadge').style.display = 'none';
-    }
-  } catch { document.getElementById('githubSection').style.display = 'none'; }
-}
-
-async function loadRepoInfo(repoFullName) {
-  try {
-    const summary = await get('/api/github/my-repo-summary');
-    if (summary.linked && summary.lastCommit) {
-      document.getElementById('repoLastCommit').textContent = 'Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author;
-    }
-    if (summary.language) {
-      const langBadge = document.getElementById('repoLangBadge');
-      langBadge.textContent = summary.language;
-      langBadge.style.display = 'inline-block';
-    }
-    if (summary.private) {
-      document.getElementById('repoPrivateBadge').style.display = 'inline-block';
-    }
-    loadStudentCommits();
-  } catch {}
-}
 
 async function loadStudentCommits() {
   try {
     const commits = await get('/api/github/my-commits?limit=15');
-    const area = document.getElementById('githubCommitsArea');
+    const area = document.getElementById('githubCommitArea');
     const container = document.getElementById('commitListStudent');
     if (!commits.length) { area.style.display = 'none'; return; }
     area.style.display = 'block';
@@ -347,8 +342,7 @@ if (urlParams.get('github') === 'connected') {
 }
 
 load();
-checkGitHub();
-setInterval(() => { load(); checkGitHub(); }, 10000);
+setInterval(load, 10000);
 </script>
 </body>
 </html>
