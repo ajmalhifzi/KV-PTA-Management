@@ -17,7 +17,7 @@ const NAV = {
     { label: 'Student Uploads', icon: 'upload', href: '/teacher/uploads.html' },
   ],
   student: [
-    { label: 'My Project', icon: 'file-text', href: '/student/project.html' },
+    { label: 'Projects', icon: 'file-text', href: '/student/projects.html', collapsible: true },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
     { label: 'Comments', icon: 'message-square', href: '/student/comments.html' },
     { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
@@ -63,12 +63,28 @@ function renderSidebar() {
       </button>
     </div>
     <nav class="sidebar-nav">
-      ${navItems.map(item => `
-        <a class="nav-item ${currentPath === item.href ? 'active' : ''}" href="${item.href}">
-          ${ICONS[item.icon] || ''}
-          <span>${item.label}</span>
-        </a>
-      `).join('')}
+      ${navItems.map(item => {
+        if (item.collapsible) {
+          return `
+            <div class="nav-group">
+              <div style="display:flex;align-items:center">
+                <a class="nav-item ${currentPath === item.href ? 'active' : ''}" href="${item.href}" style="flex:1">
+                  ${ICONS[item.icon] || ''}
+                  <span>${item.label}</span>
+                </a>
+                <button class="nav-toggle" onclick="event.stopPropagation();toggleNavGroup(this)" aria-label="Toggle projects">&#9654;</button>
+              </div>
+              <div class="nav-children" id="navChildren_${item.label}"></div>
+            </div>
+          `;
+        }
+        return `
+          <a class="nav-item ${currentPath === item.href ? 'active' : ''}" href="${item.href}">
+            ${ICONS[item.icon] || ''}
+            <span>${item.label}</span>
+          </a>
+        `;
+      })}
     </nav>
     <div style="padding: 8px; border-top: 1px solid var(--gray-200);">
       <a class="nav-item" onclick="logout()">
@@ -79,6 +95,29 @@ function renderSidebar() {
   `;
 
   if (collapsed) sidebar.classList.add('collapsed');
+  loadNavProjects();
+}
+
+function toggleNavGroup(btn) {
+  const children = btn.parentElement.nextElementSibling;
+  if (!children) return;
+  const isOpen = children.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+}
+
+async function loadNavProjects() {
+  const user = getUser();
+  if (!user || user.role !== 'student') return;
+  try {
+    const data = await get('/api/student/group');
+    const children = document.getElementById('navChildren_Projects');
+    if (!children) return;
+    if (data && data.project_id) {
+      children.innerHTML = '<a class="nav-child-item" href="/student/projects.html#project-' + data.project_id + '">' + (data.title || 'My Project') + '</a>';
+    } else {
+      children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
+    }
+  } catch {}
 }
 
 function toggleSidebar() {

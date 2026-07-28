@@ -28,13 +28,13 @@ router.get('/login', (req, res) => {
 
 router.get('/callback', async (req, res) => {
   const { code, state } = req.query;
-  if (!code || !state) return res.redirect(process.env.FRONTEND_URL + '/student/project.html?github=error');
+  if (!code || !state) return res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=error');
 
   let payload;
   try {
     payload = jwt.verify(state, process.env.JWT_SECRET);
   } catch {
-    return res.redirect(process.env.FRONTEND_URL + '/student/project.html?github=error');
+    return res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=error');
   }
 
   try {
@@ -50,7 +50,7 @@ router.get('/callback', async (req, res) => {
     const tokenData = await tokenRes.json();
 
     if (tokenData.error) {
-      return res.redirect(process.env.FRONTEND_URL + '/student/project.html?github=error');
+      return res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=error');
     }
 
     const userRes = await fetch('https://api.github.com/user', {
@@ -75,10 +75,10 @@ router.get('/callback', async (req, res) => {
       tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000) : null
     ]);
 
-    res.redirect(process.env.FRONTEND_URL + '/student/project.html?github=connected');
+    res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=connected');
   } catch (err) {
     console.error('GitHub OAuth error:', err);
-    res.redirect(process.env.FRONTEND_URL + '/student/project.html?github=error');
+    res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=error');
   }
 });
 
@@ -295,7 +295,7 @@ router.post('/commits/:projectId/:sha/comments', authorize('teacher'), async (re
     type: 'comment',
     title: 'New Comment on Commit',
     message: body.length > 120 ? body.slice(0, 120) + '...' : body,
-    relatedUrl: '/student/project.html'
+    relatedUrl: '/student/projects.html'
   });
 
   res.status(201).json({

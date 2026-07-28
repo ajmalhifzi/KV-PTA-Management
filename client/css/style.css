@@ -64,6 +64,40 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-
 .sidebar.collapsed .nav-item span { display: none; }
 .sidebar.collapsed .nav-item { justify-content: center; padding: 10px; }
 
+.nav-group { position: relative; }
+.nav-toggle {
+  margin-left: auto; background: none; border: none; cursor: pointer;
+  color: var(--gray-400); padding: 2px 4px; font-size: 10px; flex-shrink: 0;
+  transition: transform 0.2s; line-height: 1;
+}
+.nav-toggle.open { transform: rotate(90deg); }
+.nav-children { display: none; padding-left: 20px; }
+.nav-children.open { display: block; }
+.nav-child-item {
+  display: block; padding: 6px 12px; border-radius: 4px;
+  color: var(--gray-500); text-decoration: none; font-size: 12px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  transition: all 0.15s;
+}
+.nav-child-item:hover { background: var(--soft-blue-50); color: var(--dark-blue-600); }
+.nav-child-item.active { background: var(--soft-blue-100); color: var(--dark-blue-700); font-weight: 600; }
+.sidebar.collapsed .nav-group .nav-toggle,
+.sidebar.collapsed .nav-children { display: none; }
+
+.project-card { margin-bottom: 16px; }
+.project-header {
+  display: flex; align-items: center; gap: 10px; cursor: pointer;
+  user-select: none;
+}
+.project-header:hover { opacity: 0.8; }
+.project-arrow {
+  font-size: 12px; color: var(--gray-400); flex-shrink: 0;
+  transition: transform 0.2s;
+}
+.project-arrow.open { transform: rotate(90deg); }
+.project-body { display: none; padding-top: 16px; margin-top: 16px; border-top: 1px solid var(--gray-200); }
+.project-body.open { display: block; }
+
 .main-content { margin-left: var(--sidebar-width); transition: margin-left 0.2s ease; min-height: 100vh; }
 .sidebar.collapsed ~ .main-content { margin-left: var(--sidebar-collapsed); }
 

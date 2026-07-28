@@ -11,7 +11,7 @@ function requireAuth() {
 }
 
 function redirectByRole(role) {
-  const map = { admin: '/admin/dashboard.html', teacher: '/teacher/dashboard.html', student: '/student/project.html' };
+  const map = { admin: '/admin/dashboard.html', teacher: '/teacher/dashboard.html', student: '/student/projects.html' };
   window.location.href = map[role] || '/';
 }
 
