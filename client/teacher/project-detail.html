@@ -12,8 +12,12 @@
 <div class="main-content">
   <div id="header" class="top-header"></div>
   <div class="content-area">
-    <div class="card" style="margin-bottom:16px" id="projectInfo"></div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap">
+    <div class="card" id="projectInfo">
+      <div id="githubSection" style="display:none">
+        <div id="commitList" style="margin-top:12px"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
       <div class="card" style="flex:2;min-width:300px">
         <h3 style="font-size:14px;font-weight:700;color:var(--dark-blue-800);margin-bottom:12px">Comments</h3>
         <div class="comment-thread" id="commentsList"></div>
@@ -28,15 +32,6 @@
           <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" onclick="updateStatus('approved')">Approve</button>
           <button class="btn btn-soft" style="width:100%;justify-content:center;margin-bottom:8px" onclick="updateStatus('revision')">Request Revision</button>
           <button class="btn btn-secondary" style="width:100%;justify-content:center;color:var(--badge-red)" onclick="updateStatus('rejected')">Reject</button>
-        </div>
-        <div class="card" id="githubCommitCard" style="display:none">
-          <h3 style="font-size:14px;font-weight:700;color:var(--dark-blue-800);margin-bottom:12px;display:flex;align-items:center;gap:6px">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-            GitHub Commits
-          </h3>
-          <div id="commitList" style="max-height:300px;overflow-y:auto">
-            <div style="text-align:center;padding:16px;color:var(--gray-400);font-size:13px">Loading commits...</div>
-          </div>
         </div>
       </div>
     </div>
@@ -69,6 +64,7 @@ async function load() {
       <div><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Purpose</div><div style="font-size:14px">${project.purpose}</div></div>
       <div style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px">Scope</div><div style="font-size:14px">${project.scope}</div></div>
     </div>
+    <div id="githubSection" style="display:none"></div>
   `;
   loadComments();
 }
@@ -103,43 +99,44 @@ async function updateStatus(status) {
 }
 
 async function loadGitHubCommits() {
+  const section = document.getElementById('githubSection');
+  if (!section) return;
   try {
     const summary = await get('/api/github/repo-summary/' + projectId);
-    const card = document.getElementById('githubCommitCard');
-    if (!summary.linked) { card.style.display = 'none'; return; }
-    card.style.display = 'block';
+    if (!summary.linked) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+
+    section.innerHTML = '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-200)"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg><span style="font-size:13px;font-weight:600;color:var(--dark-blue-800)">GitHub Commits</span><a href="https://github.com/' + summary.fullName + '" target="_blank" style="font-size:11px;color:var(--dark-blue-600);text-decoration:none;margin-left:auto">' + summary.fullName + '</a></div><div id="commitList"></div></div>';
 
     const commits = await get('/api/github/commits/' + projectId + '?limit=20');
     const list = document.getElementById('commitList');
 
     if (commits.length === 0) {
-      list.innerHTML = '<div style="text-align:center;padding:16px;color:var(--gray-400);font-size:13px">No commits found</div>';
+      list.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">No commits found</div>';
       return;
     }
 
-    list.innerHTML = '<div style="margin-bottom:8px;font-size:12px;color:var(--gray-400)"><a href="https://github.com/' + summary.fullName + '" target="_blank" style="color:var(--dark-blue-600);text-decoration:none;font-weight:600">' + summary.fullName + '</a> &middot; ' + summary.defaultBranch + ' branch</div>';
-
     for (const c of commits) {
       const commitEl = document.createElement('div');
-      commitEl.style.cssText = 'padding:8px 0;border-bottom:1px solid var(--gray-100);font-size:13px';
+      commitEl.style.cssText = 'padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:12px';
       commitEl.innerHTML = `
         <div style="display:flex;align-items:flex-start;gap:6px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" style="margin-top:2px;flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" style="margin-top:2px;flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
           <div style="flex:1">
             <a href="${c.url}" target="_blank" style="color:var(--dark-blue-700);text-decoration:none;font-weight:500">${c.message.split('\n')[0]}</a>
-            <div style="font-size:11px;color:var(--gray-400);margin-top:2px">
+            <div style="font-size:10px;color:var(--gray-400);margin-top:1px">
               <span>${c.author}</span>
               <span>&middot;</span>
               <span>${timeAgo(c.date)}</span>
               <span>&middot;</span>
-              <span style="font-family:monospace;font-size:10px">${c.sha.slice(0,7)}</span>
-              <button class="btn btn-sm" style="font-size:10px;padding:1px 8px;margin-left:8px" onclick="toggleCommitComment('${c.sha}', this)">Comment</button>
+              <span style="font-family:monospace">${c.sha.slice(0,7)}</span>
+              <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px" onclick="toggleCommitComment('${c.sha}', this)">Comment</button>
             </div>
-            <div id="commitComments_${c.sha}" style="margin-top:4px"></div>
-            <div id="commitCommentForm_${c.sha}" style="display:none;margin-top:6px">
-              <div style="display:flex;gap:6px">
-                <input class="form-input" id="commentInput_${c.sha}" placeholder="Write feedback on this commit..." style="flex:1;font-size:12px;padding:6px 10px">
-                <button class="btn btn-primary btn-sm" style="font-size:11px" onclick="addCommitComment('${c.sha}')">Send</button>
+            <div id="commitComments_${c.sha}" style="margin-top:3px"></div>
+            <div id="commitCommentForm_${c.sha}" style="display:none;margin-top:4px">
+              <div style="display:flex;gap:4px">
+                <input class="form-input" id="commentInput_${c.sha}" placeholder="Write feedback on this commit..." style="flex:1;font-size:11px;padding:4px 8px">
+                <button class="btn btn-primary btn-sm" style="font-size:10px" onclick="addCommitComment('${c.sha}')">Send</button>
               </div>
             </div>
           </div>
@@ -149,7 +146,7 @@ async function loadGitHubCommits() {
       loadCommitComments(c.sha);
     }
   } catch {
-    document.getElementById('githubCommitCard').style.display = 'none';
+    section.style.display = 'none';
   }
 }
 
