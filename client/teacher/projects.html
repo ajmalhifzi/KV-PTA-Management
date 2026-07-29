@@ -29,6 +29,7 @@
       <div id="projectInfo" class="card" style="margin-bottom:16px">
         <div id="projectInfoHeader"></div>
         <div id="projectInfoBody" style="margin-top:16px"></div>
+        <div id="projectInfoActions" style="margin-top:16px;display:flex;gap:8px;align-items:center"></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start">
@@ -149,6 +150,24 @@ function renderProjectInfo(data) {
       <div class="field-value">${escapeHtml(data.scope || '-')}</div>
     </div>
   `;
+
+  const actions = document.getElementById('projectInfoActions');
+  actions.innerHTML = '';
+  if (status !== 'approved' && status !== 'rejected') {
+    actions.innerHTML = `
+      <button class="btn btn-primary btn-sm" onclick="updateStatus('approved')">Approve</button>
+      <button class="btn btn-soft btn-sm" onclick="updateStatus('revision')">Request Revision</button>
+      <button class="btn btn-secondary btn-sm" style="color:var(--red)" onclick="updateStatus('rejected')">Reject</button>
+    `;
+  }
+}
+
+async function updateStatus(status) {
+  if (!currentProjectId) return;
+  try {
+    await patch(`/api/teacher/projects/${currentProjectId}/status`, { status });
+    load();
+  } catch (e) { alert(e.message); }
 }
 
 /* GitHub */
