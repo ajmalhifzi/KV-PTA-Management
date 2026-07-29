@@ -7,8 +7,6 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css">
 <style>
-  .form-input { width:100%;padding:10px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px;outline:none;transition:border 0.15s;font-family:inherit }
-  .form-input:focus { border-color:var(--soft-blue-400);box-shadow:0 0 0 3px var(--soft-blue-100) }
   textarea.form-input { resize:vertical }
   .field-label { display:block;font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:4px }
   .msg-success { font-size:13px;color:#2b8a3e;margin-bottom:8px }
@@ -45,7 +43,25 @@
     </div>
 
     <div id="projectView" style="display:none">
-      <div id="projectList"></div>
+      <div id="projectInfo" class="card" style="margin-bottom:16px">
+        <div id="projectInfoHeader"></div>
+        <div id="projectInfoBody" style="margin-top:16px"></div>
+        <div id="projectInfoActions" style="margin-top:16px;display:flex;gap:8px;align-items:center"></div>
+      </div>
+
+      <div id="githubCard" class="card" style="margin-bottom:16px;display:none">
+        <div id="githubCardContent"></div>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;padding:24px;text-align:center">
+        <div style="font-size:13px;font-weight:600;color:var(--gray-400);margin-bottom:4px">Photo Slider</div>
+        <p style="font-size:12px;color:var(--gray-400)">Coming soon</p>
+      </div>
+
+      <div class="card" style="margin-bottom:16px;padding:24px;text-align:center">
+        <div style="font-size:13px;font-weight:600;color:var(--gray-400);margin-bottom:4px">Comment & Chat</div>
+        <p style="font-size:12px;color:var(--gray-400)">Coming soon</p>
+      </div>
     </div>
 
     <div id="linkRepoModal" class="modal-overlay" style="display:none">
@@ -73,7 +89,6 @@ if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Projects');
 
 let projectsData = null;
-let expandedProjectId = null;
 
 function timeAgo(val) {
   const diff = Date.now() - new Date(val).getTime();
@@ -87,6 +102,11 @@ function timeAgo(val) {
   return new Date(val).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
 }
 
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 async function load() {
   try {
     const data = await get('/api/student/group');
@@ -95,17 +115,21 @@ async function load() {
     if (!data.project_id) {
       document.getElementById('noProject').style.display = 'block';
       document.getElementById('projectView').style.display = 'none';
+      if (window.location.hash) {
+        loadNavProjects();
+      }
       return;
     }
 
     document.getElementById('noProject').style.display = 'none';
     document.getElementById('projectView').style.display = 'block';
 
-    renderProject(data);
+    renderProjectInfo(data);
+    renderGitHub(data);
 
     const hash = window.location.hash.replace('#project-', '');
     if (hash && hash === data.project_id) {
-      expandProject(data.project_id);
+      window.location.hash = '';
     }
 
     loadNavProjects();
@@ -115,125 +139,62 @@ async function load() {
   }
 }
 
-function renderProject(data) {
+function renderProjectInfo(data) {
   const status = data.status || 'draft';
   const badgeClass = status === 'approved' ? 'badge-green' : status === 'rejected' ? 'badge-red' : status === 'submitted' ? 'badge-yellow' : 'badge-gray';
 
-  const list = document.getElementById('projectList');
-  list.innerHTML = `
-    <div class="card project-card" id="projectCard_${data.project_id}">
-      <div class="project-header" onclick="toggleProject('${data.project_id}')">
-        <span class="project-arrow" id="arrow_${data.project_id}">&#9654;</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-size:15px;font-weight:700;color:var(--dark-blue-800)">${data.title || '(No title)'}</div>
-          <div style="font-size:11px;color:var(--gray-400);margin-top:2px">${data.group_name} &middot; ${data.teacher_name}</div>
-        </div>
-        <span class="badge ${badgeClass}" style="font-size:11px">${status}</span>
-      </div>
-      <div class="project-body" id="body_${data.project_id}">
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:16px;padding:10px 14px;background:var(--soft-blue-50);border-radius:6px;font-size:13px">
-          <span><strong style="color:var(--dark-blue-700)">Group:</strong> ${data.group_name}</span>
-          <span><strong style="color:var(--dark-blue-700)">Teacher:</strong> ${data.teacher_name} (${data.teacher_email})</span>
-        </div>
-
-        <div id="proposalFields_${data.project_id}">
-          <div class="form-group">
-            <label class="field-label">Project Title</label>
-            <input class="form-input" id="editTitle_${data.project_id}" value="${escapeHtml(data.title || '')}">
-          </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="form-group">
-              <label class="field-label">Objective</label>
-              <textarea class="form-input" id="editObjective_${data.project_id}" rows="2">${escapeHtml(data.objective || '')}</textarea>
-            </div>
-            <div class="form-group">
-              <label class="field-label">Purpose</label>
-              <textarea class="form-input" id="editPurpose_${data.project_id}" rows="2">${escapeHtml(data.purpose || '')}</textarea>
-            </div>
-          </div>
-          <div class="form-group">
-            <label class="field-label">Scope</label>
-            <textarea class="form-input" id="editScope_${data.project_id}" rows="2">${escapeHtml(data.scope || '')}</textarea>
-          </div>
-          <div id="editMsg_${data.project_id}" style="display:none"></div>
-          <div style="display:flex;gap:8px;margin-bottom:16px">
-            <button class="btn btn-primary btn-sm" onclick="saveProject('${data.project_id}')">Save Changes</button>
-            ${status === 'draft' ? '<button class="btn btn-soft btn-sm" onclick="submitProject()">Submit for Review</button>' : ''}
-          </div>
-        </div>
-
-        <div id="githubSection_${data.project_id}" style="border-top:1px solid var(--gray-200);padding-top:16px">
-          <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-            <span style="font-size:13px;font-weight:600;color:var(--dark-blue-800)">GitHub Repository</span>
-            <span id="githubBadge_${data.project_id}" class="badge badge-gray" style="font-size:10px;display:none"></span>
-          </div>
-          <div id="githubContent_${data.project_id}">
-            <div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Loading GitHub status...</div>
-          </div>
+  document.getElementById('projectInfoHeader').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
+      <div>
+        <h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)">${escapeHtml(data.title || '(No title)')}</h2>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:13px;color:var(--gray-500)">
+          <span><strong style="color:var(--dark-blue-700)">Group:</strong> ${escapeHtml(data.group_name)}</span>
+          <span><strong style="color:var(--dark-blue-700)">Teacher:</strong> ${escapeHtml(data.teacher_name)} (${escapeHtml(data.teacher_email)})</span>
         </div>
       </div>
+      <span class="badge ${badgeClass}" style="font-size:12px">${status}</span>
     </div>
   `;
 
-  if (data.github_repo_url) {
-    loadGitHubData(data);
-  } else {
-    checkGitHubStatus(data);
-  }
+  document.getElementById('projectInfoBody').innerHTML = `
+    <div class="form-group">
+      <label class="field-label">Project Title</label>
+      <input class="form-input" id="editTitle" value="${escapeHtml(data.title || '')}">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group">
+        <label class="field-label">Objective</label>
+        <textarea class="form-input" id="editObjective" rows="2">${escapeHtml(data.objective || '')}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="field-label">Purpose</label>
+        <textarea class="form-input" id="editPurpose" rows="2">${escapeHtml(data.purpose || '')}</textarea>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="field-label">Scope</label>
+      <textarea class="form-input" id="editScope" rows="2">${escapeHtml(data.scope || '')}</textarea>
+    </div>
+    <div id="editMsg" style="display:none"></div>
+  `;
+
+  document.getElementById('projectInfoActions').innerHTML = `
+    <button class="btn btn-primary btn-sm" onclick="saveProject()">Save Changes</button>
+    ${status === 'draft' ? '<button class="btn btn-soft btn-sm" onclick="submitProject()">Submit for Review</button>' : ''}
+  `;
 }
 
-function escapeHtml(s) {
-  if (!s) return '';
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function toggleProject(id) {
-  const body = document.getElementById('body_' + id);
-  const arrow = document.getElementById('arrow_' + id);
-  if (!body || !arrow) return;
-  const isOpen = body.classList.toggle('open');
-  arrow.classList.toggle('open', isOpen);
-  if (isOpen) {
-    expandedProjectId = id;
-    const data = projectsData;
-    if (data && data.github_repo_url) {
-      loadGitHubData(data);
-    } else if (data) {
-      checkGitHubStatus(data);
-    }
-  } else {
-    expandedProjectId = null;
-  }
-}
-
-function expandProject(id) {
-  const body = document.getElementById('body_' + id);
-  const arrow = document.getElementById('arrow_' + id);
-  if (!body || !arrow) return;
-  body.classList.add('open');
-  arrow.classList.add('open');
-  expandedProjectId = id;
-  const data = projectsData;
-  if (data && data.github_repo_url) {
-    loadGitHubData(data);
-  } else if (data) {
-    checkGitHubStatus(data);
-  }
-}
-
-async function saveProject(id) {
-  const msg = document.getElementById('editMsg_' + id);
+async function saveProject() {
+  const msg = document.getElementById('editMsg');
   msg.style.display = 'none';
   try {
-    const body = {
+    await put('/api/student/group', {
       group_name: projectsData.group_name,
-      title: document.getElementById('editTitle_' + id).value,
-      objective: document.getElementById('editObjective_' + id).value,
-      purpose: document.getElementById('editPurpose_' + id).value,
-      scope: document.getElementById('editScope_' + id).value
-    };
-    await put('/api/student/group', body);
+      title: document.getElementById('editTitle').value,
+      objective: document.getElementById('editObjective').value,
+      purpose: document.getElementById('editPurpose').value,
+      scope: document.getElementById('editScope').value
+    });
     msg.className = 'msg-success';
     msg.textContent = 'Project saved successfully.';
     msg.style.display = 'block';
@@ -279,21 +240,45 @@ async function saveNewProject() {
 
 /* GitHub */
 
+function renderGitHub(data) {
+  const card = document.getElementById('githubCard');
+  if (!data.project_id) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+
+  const content = document.getElementById('githubCardContent');
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      <span style="font-size:14px;font-weight:600;color:var(--dark-blue-800)">GitHub Repository</span>
+      <span id="githubBadge" class="badge badge-gray" style="font-size:10px;display:none"></span>
+    </div>
+    <div id="githubContent">
+      <div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Loading GitHub status...</div>
+    </div>
+  `;
+
+  if (data.github_repo_url) {
+    loadGitHubData(data);
+  } else {
+    checkGitHubStatus(data);
+  }
+}
+
 async function checkGitHubStatus(data) {
-  const container = document.getElementById('githubContent_' + data.project_id);
+  const container = document.getElementById('githubContent');
   try {
     const statusRes = await get('/api/github/status');
     if (statusRes.connected) {
       container.innerHTML = `
-        <div style="font-size:12px;color:var(--gray-500);margin-bottom:6px">Connected as <strong style="color:var(--dark-blue-700)">${statusRes.github_username}</strong></div>
-        <button class="btn btn-primary btn-sm" onclick="showLinkRepoModal('${data.project_id}')" style="font-size:12px">
+        <div style="font-size:13px;color:var(--gray-500);margin-bottom:8px">Connected as <strong style="color:var(--dark-blue-700)">${statusRes.github_username}</strong></div>
+        <button class="btn btn-primary btn-sm" onclick="showLinkRepoModal()" style="font-size:12px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           Link Repository
         </button>
       `;
     } else {
       container.innerHTML = `
-        <p style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Connect your GitHub account to link a repository to this project.</p>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:8px">Connect your GitHub account to link a repository to this project.</p>
         <button class="btn btn-primary btn-sm" onclick="connectGitHub()" style="font-size:12px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin-right:4px"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
           Connect GitHub
@@ -306,8 +291,8 @@ async function checkGitHubStatus(data) {
 }
 
 async function loadGitHubData(data) {
-  const container = document.getElementById('githubContent_' + data.project_id);
-  const badge = document.getElementById('githubBadge_' + data.project_id);
+  const content = document.getElementById('githubContent');
+  const badge = document.getElementById('githubBadge');
   try {
     const summary = await get('/api/github/my-repo-summary');
     const repoFullName = data.github_repo_url.replace('https://github.com/', '');
@@ -317,7 +302,7 @@ async function loadGitHubData(data) {
 
     let extraInfo = '';
     if (summary.linked && summary.lastCommit) {
-      extraInfo += '<div style="margin-top:4px;font-size:11px;color:var(--gray-400)">Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author + '</div>';
+      extraInfo += '<div style="margin-top:4px;font-size:12px;color:var(--gray-400)">Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author + '</div>';
     }
     if (summary.language) {
       extraInfo += ' <span class="badge badge-blue" style="font-size:9px">' + summary.language + '</span>';
@@ -326,46 +311,46 @@ async function loadGitHubData(data) {
       extraInfo += ' <span class="badge badge-gray" style="font-size:9px">Private</span>';
     }
 
-    container.innerHTML = `
+    content.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <a href="${data.github_repo_url}" target="_blank" style="font-size:13px;font-weight:600;color:var(--dark-blue-600);text-decoration:none;display:flex;align-items:center;gap:4px">
+        <a href="${data.github_repo_url}" target="_blank" style="font-size:14px;font-weight:600;color:var(--dark-blue-600);text-decoration:none;display:flex;align-items:center;gap:4px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           ${repoFullName}
         </a>
         ${extraInfo}
       </div>
-      <div id="commitArea_${data.project_id}" style="margin-top:8px"></div>
-      <div style="margin-top:6px">
+      <div id="commitArea" style="margin-top:10px"></div>
+      <div style="margin-top:8px">
         <button class="btn btn-secondary btn-sm" onclick="unlinkRepo()" style="color:var(--badge-red);font-size:11px">Unlink</button>
       </div>
     `;
-    loadStudentCommits(data.project_id);
+    loadStudentCommits();
   } catch {
-    container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Failed to load repo data.</div>';
+    content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Failed to load repo data.</div>';
   }
 }
 
-async function loadStudentCommits(pid) {
+async function loadStudentCommits() {
   try {
     const commits = await get('/api/github/my-commits?limit=15');
-    const area = document.getElementById('commitArea_' + pid);
+    const area = document.getElementById('commitArea');
     if (!area) return;
     if (!commits.length) { area.innerHTML = ''; return; }
-    area.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--dark-blue-700);margin-bottom:4px">Recent Commits & Feedback</div>' +
-      '<div style="max-height:200px;overflow-y:auto">' +
+    area.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--dark-blue-700);margin-bottom:6px">Recent Commits & Feedback</div>' +
+      '<div style="max-height:250px;overflow-y:auto">' +
       commits.map(c => {
         const hasComments = c.comments && c.comments.length > 0;
-        return '<div style="padding:6px 0;border-bottom:1px solid var(--gray-100);font-size:12px">' +
-          '<div style="display:flex;align-items:flex-start;gap:4px">' +
+        return '<div style="padding:7px 0;border-bottom:1px solid var(--gray-100);font-size:13px">' +
+          '<div style="display:flex;align-items:flex-start;gap:5px">' +
             '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" style="margin-top:3px;flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
             '<div style="flex:1">' +
               '<a href="' + c.url + '" target="_blank" style="color:var(--dark-blue-700);text-decoration:none;font-weight:500">' + c.message.split('\n')[0] + '</a>' +
-              '<div style="font-size:10px;color:var(--gray-400);margin-top:1px">' +
+              '<div style="font-size:11px;color:var(--gray-400);margin-top:1px">' +
                 '<span>' + c.author + '</span> <span>&middot;</span> <span>' + timeAgo(c.date) + '</span> <span>&middot;</span> <span style="font-family:monospace">' + c.sha.slice(0,7) + '</span>' +
                 (hasComments ? ' <span style="color:var(--dark-blue-600)">&middot; ' + c.comments.length + ' comment(s)</span>' : '') +
               '</div>' +
               (hasComments ? '<div style="margin-top:4px">' + c.comments.map(cmt =>
-                '<div style="padding:4px 6px;margin-top:3px;background:var(--soft-blue-50);border-radius:4px;font-size:11px">' +
+                '<div style="padding:5px 8px;margin-top:3px;background:var(--soft-blue-50);border-radius:4px;font-size:12px">' +
                   '<strong style="color:var(--dark-blue-700)">' + cmt.author + '</strong> ' +
                   '<span style="color:var(--gray-600)">' + cmt.body + '</span>' +
                 '</div>'
@@ -383,7 +368,7 @@ function connectGitHub() {
   window.location.href = '/api/github/login?token=' + encodeURIComponent(token);
 }
 
-function showLinkRepoModal(pid) {
+function showLinkRepoModal() {
   document.getElementById('linkRepoModal').style.display = 'flex';
   const repoList = document.getElementById('repoList');
   repoList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--gray-400);font-size:13px">Loading repositories...</div>';
