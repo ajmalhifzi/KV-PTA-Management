@@ -95,9 +95,9 @@ async function load() {
   groups.forEach(g => { if (g.students) allStudents = allStudents.concat(g.students); });
 
   const stats = { total: allStudents.length, groups: groups.length, pending: 0, approved: 0 };
-  allStudents.forEach(s => {
-    if (s.status === 'submitted' || s.status === 'revision') stats.pending++;
-    else if (s.status === 'approved') stats.approved++;
+  groups.forEach(g => {
+    if (g.status === 'submitted' || g.status === 'revision') stats.pending++;
+    else if (g.status === 'approved') stats.approved++;
   });
 
   const sparkData = [12, 19, 15, 22, 18, 24, 20];
@@ -189,8 +189,10 @@ async function load() {
         <td>
           ${g.project_id ? `
             <button class="btn btn-soft btn-sm" onclick="viewProject('${g.project_id}')">View</button>
-            <button class="btn btn-primary btn-sm" onclick="updateStatus('${g.project_id}','approved')" style="margin-left:4px">Approve</button>
-            <button class="btn btn-secondary btn-sm" onclick="updateStatus('${g.project_id}','revision')" style="margin-left:4px">Revise</button>
+            ${g.status !== 'approved' && g.status !== 'rejected' ? `
+              <button class="btn btn-primary btn-sm" onclick="updateStatus('${g.project_id}','approved')" style="margin-left:4px">Approve</button>
+              <button class="btn btn-secondary btn-sm" onclick="updateStatus('${g.project_id}','revision')" style="margin-left:4px">Revise</button>
+            ` : ''}
           ` : '-'}
         </td>
       </tr>
