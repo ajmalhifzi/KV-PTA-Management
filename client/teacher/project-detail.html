@@ -6,39 +6,47 @@
 <title>Project Detail - KV PTA Management</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css">
+<style>
+  .field-label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px }
+  .field-value { font-size:14px;color:var(--text-primary);margin-bottom:12px }
+</style>
 </head>
 <body>
 <div id="sidebar" class="sidebar"></div>
 <div class="main-content">
   <div id="header" class="top-header"></div>
   <div class="content-area">
-    <div class="card" id="projectInfo">
-      <div id="githubSection" style="display:none">
-        <div id="commitList" style="margin-top:12px"></div>
+
+    <div id="projectView">
+      <div id="projectInfo" class="card" style="margin-bottom:16px">
+        <div id="projectInfoHeader"></div>
+        <div id="projectInfoBody" style="margin-top:16px"></div>
+        <div id="projectInfoActions" style="margin-top:16px;display:flex;gap:8px;align-items:center"></div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start">
+        <div id="githubCard" class="card" style="display:none">
+          <div id="githubCardContent"></div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px;padding:24px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Photo Slider</div>
+            <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
+          </div>
+          <div class="card" style="padding:16px">
+            <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Comment & Chat</div>
+            <div id="chatList" style="font-size:13px;color:var(--text-muted);max-height:300px;overflow-y:auto;margin-bottom:10px">
+              <p>No messages yet.</p>
+            </div>
+            <div style="display:flex;gap:6px">
+              <input class="form-input" id="chatInput" placeholder="Type a message..." style="flex:1;font-size:12px">
+              <button class="btn btn-primary btn-sm" onclick="addChatComment()" style="font-size:12px;white-space:nowrap">Send</button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
-    <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:16px">
-      <div class="card" style="flex:2;min-width:300px">
-        <h3 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px">Comments</h3>
-        <div class="comment-thread" id="commentsList"></div>
-        <div style="margin-top:12px;display:flex;gap:8px">
-          <input class="form-input" id="commentInput" placeholder="Write a comment..." style="flex:1">
-          <button class="btn btn-primary" onclick="addComment()">Send</button>
-        </div>
-      </div>
-      <div style="flex:1;min-width:200px;display:flex;flex-direction:column;gap:16px">
-        <div class="card" style="padding:24px;text-align:center">
-          <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Photo Slider</div>
-          <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
-        </div>
-        <div class="card" id="actionsCard">
-          <h3 style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:12px">Actions</h3>
-          <button class="btn btn-primary" style="width:100%;justify-content:center;margin-bottom:8px" onclick="updateStatus('approved')">Approve</button>
-          <button class="btn btn-soft" style="width:100%;justify-content:center;margin-bottom:8px" onclick="updateStatus('revision')">Request Revision</button>
-          <button class="btn btn-secondary" style="width:100%;justify-content:center;color:var(--red)" onclick="updateStatus('rejected')">Reject</button>
-        </div>
-      </div>
-    </div>
+
   </div>
 </div>
 
@@ -52,56 +60,67 @@ const projectId = localStorage.getItem('viewProjectId');
 if (!projectId) window.location.href = '/teacher/dashboard.html';
 renderPage('Project Detail');
 
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(val) {
+  const diff = Date.now() - new Date(val).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(val).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+}
+
 async function load() {
   try {
     const project = await get(`/api/teacher/projects/${projectId}`);
-    document.getElementById('projectInfo').innerHTML = `
+
+    const badgeClass = project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray';
+    const students = project.students && project.students.length ? project.students.map(s => escapeHtml(s.full_name)).join(', ') : '';
+
+    document.getElementById('projectInfoHeader').innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
         <div>
-          <h2 style="font-size:18px;font-weight:700;color:var(--text-primary)">${project.title}</h2>
-          <p style="font-size:13px;color:var(--text-secondary)">Group: ${project.group_name}</p>
-          <p style="font-size:12px;color:var(--text-muted)">${project.students && project.students.length ? project.students.map(s => s.full_name).join(', ') : ''}</p>
+          <h2 style="font-size:18px;font-weight:700;color:var(--text-primary)">${escapeHtml(project.title)}</h2>
+          <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:13px;color:var(--text-secondary)">
+            <span><strong style="color:var(--primary)">Group:</strong> ${escapeHtml(project.group_name)}</span>
+            ${students ? '<span><strong style="color:var(--primary)">Students:</strong> ' + students + '</span>' : ''}
+          </div>
         </div>
-        <div><span class="badge ${project.status === 'approved' ? 'badge-green' : project.status === 'rejected' ? 'badge-red' : project.status === 'submitted' ? 'badge-yellow' : 'badge-gray'}">${project.status}</span></div>
+        <span class="badge ${badgeClass}" style="font-size:12px">${project.status}</span>
       </div>
-      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
-        <div><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px">Objective</div><div style="font-size:14px">${project.objective}</div></div>
-        <div><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px">Purpose</div><div style="font-size:14px">${project.purpose}</div></div>
-        <div style="grid-column:1/-1"><div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px">Scope</div><div style="font-size:14px">${project.scope}</div></div>
-      </div>
-      <div id="githubSection" style="display:none"></div>
     `;
-    const actionsCard = document.getElementById('actionsCard');
-    if (actionsCard) {
-      actionsCard.style.display = (project.status === 'approved' || project.status === 'rejected') ? 'none' : 'block';
+
+    document.getElementById('projectInfoBody').innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><div class="field-label">Objective</div><div class="field-value">${escapeHtml(project.objective || '-')}</div></div>
+        <div><div class="field-label">Purpose</div><div class="field-value">${escapeHtml(project.purpose || '-')}</div></div>
+      </div>
+      <div><div class="field-label">Scope</div><div class="field-value">${escapeHtml(project.scope || '-')}</div></div>
+    `;
+
+    const actions = document.getElementById('projectInfoActions');
+    if (project.status !== 'approved' && project.status !== 'rejected') {
+      actions.innerHTML = `
+        <button class="btn btn-primary btn-sm" onclick="updateStatus('approved')">Approve</button>
+        <button class="btn btn-soft btn-sm" onclick="updateStatus('revision')" style="margin-left:4px">Request Revision</button>
+        <button class="btn btn-secondary btn-sm" style="margin-left:4px;color:var(--red)" onclick="updateStatus('rejected')">Reject</button>
+      `;
+    } else {
+      actions.innerHTML = '';
     }
+
     loadComments();
-    loadGitHubCommits();
+    loadTeacherGitHub(project);
   } catch (e) {
     console.error('load error:', e);
   }
-}
-
-async function loadComments() {
-  const comments = await get(`/api/teacher/projects/${projectId}/comments`);
-  const container = document.getElementById('commentsList');
-  if (comments.length === 0) {
-    container.innerHTML = '<div class="empty-state" style="padding:24px"><p>No comments yet</p></div>';
-  } else {
-    container.innerHTML = comments.map(c => `
-      <div class="comment"><div class="comment-header"><span class="comment-author">${c.author_name}</span><span class="badge ${c.author_role === 'teacher' ? 'badge-blue' : 'badge-gray'}" style="font-size:10px">${c.author_role}</span><span class="comment-time">${new Date(c.created_at).toLocaleString()}</span></div><div class="comment-content">${c.content}</div></div>
-    `).join('');
-  }
-}
-
-async function addComment() {
-  const input = document.getElementById('commentInput');
-  if (!input.value.trim()) return;
-  try {
-    await post(`/api/teacher/projects/${projectId}/comments`, { content: input.value });
-    input.value = '';
-    loadComments();
-  } catch (e) { alert(e.message); }
 }
 
 async function updateStatus(status) {
@@ -111,18 +130,63 @@ async function updateStatus(status) {
   } catch (e) { alert(e.message); }
 }
 
-async function loadGitHubCommits() {
-  const section = document.getElementById('githubSection');
-  if (!section) return;
+/* Comment & Chat */
+
+async function loadComments() {
+  try {
+    const comments = await get(`/api/teacher/projects/${projectId}/comments`);
+    const list = document.getElementById('chatList');
+    if (!list) return;
+    if (!comments.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No messages yet.</p>';
+    } else {
+      list.innerHTML = comments.map(c =>
+        '<div style="padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:6px;font-size:13px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">' +
+            '<strong style="color:var(--primary);font-size:12px">' + escapeHtml(c.author_name) + '</strong>' +
+            '<span style="font-size:10px;color:var(--text-muted)">' + new Date(c.created_at).toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="color:var(--text-secondary)">' + escapeHtml(c.content) + '</div>' +
+        '</div>'
+      ).join('');
+      list.scrollTop = list.scrollHeight;
+    }
+  } catch { if (list) list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Could not load messages.</p>'; }
+}
+
+async function addChatComment() {
+  const input = document.getElementById('chatInput');
+  if (!input.value.trim()) return;
+  try {
+    await post(`/api/teacher/projects/${projectId}/comments`, { content: input.value });
+    input.value = '';
+    loadComments();
+  } catch (e) { alert(e.message); }
+}
+
+/* GitHub */
+
+async function loadTeacherGitHub(project) {
+  const card = document.getElementById('githubCard');
+  if (!card) return;
   try {
     const summary = await get('/api/github/repo-summary/' + projectId);
-    if (!summary.linked) { section.style.display = 'none'; return; }
-    section.style.display = 'block';
+    if (!summary.linked) { card.style.display = 'none'; return; }
+    card.style.display = 'block';
 
-    section.innerHTML = '<div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border)"><div style="display:flex;align-items:center;gap:6px;margin-bottom:10px"><svg width="16" height="16" viewBox="0 0 24 24" fill="var(--primary)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg><span style="font-size:13px;font-weight:600;color:var(--text-primary)">GitHub Commits</span><a href="https://github.com/' + summary.fullName + '" target="_blank" style="font-size:11px;color:var(--primary);text-decoration:none;margin-left:auto">' + summary.fullName + '</a></div><div id="commitList"></div></div>';
+    const content = document.getElementById('githubCardContent');
+    content.innerHTML = `
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--primary)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span style="font-size:14px;font-weight:600;color:var(--text-primary)">GitHub Repository</span>
+        <a href="https://github.com/${summary.fullName}" target="_blank" style="font-size:12px;color:var(--primary);text-decoration:none;margin-left:auto">${summary.fullName}</a>
+      </div>
+      <div id="commitList"></div>
+    `;
 
     const commits = await get('/api/github/commits/' + projectId + '?limit=20');
     const list = document.getElementById('commitList');
+    if (!list) return;
 
     if (commits.length === 0) {
       list.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">No commits found</div>';
@@ -143,7 +207,7 @@ async function loadGitHubCommits() {
               <span>${timeAgo(c.date)}</span>
               <span>&middot;</span>
               <span style="font-family:monospace">${c.sha.slice(0,7)}</span>
-              <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px" onclick="toggleCommitComment('${c.sha}', this)">Comment</button>
+              <button class="btn btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px" onclick="toggleCommitComment('${c.sha}')">Comment</button>
             </div>
             <div id="commitComments_${c.sha}" style="margin-top:3px"></div>
             <div id="commitCommentForm_${c.sha}" style="display:none;margin-top:4px">
@@ -159,8 +223,8 @@ async function loadGitHubCommits() {
       loadCommitComments(c.sha);
     }
   } catch (e) {
-    console.error('loadGitHubCommits error:', e);
-    section.style.display = 'none';
+    console.error('loadTeacherGitHub error:', e);
+    card.style.display = 'none';
   }
 }
 
@@ -182,7 +246,7 @@ async function loadCommitComments(sha) {
   } catch {}
 }
 
-function toggleCommitComment(sha, btn) {
+function toggleCommitComment(sha) {
   const form = document.getElementById('commitCommentForm_' + sha);
   form.style.display = form.style.display === 'none' ? 'block' : 'none';
   if (form.style.display === 'block') document.getElementById('commentInput_' + sha).focus();
@@ -200,6 +264,7 @@ async function addCommitComment(sha) {
 }
 
 load();
+setInterval(loadComments, 5000);
 </script>
 </body>
 </html>
