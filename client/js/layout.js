@@ -12,6 +12,7 @@ const NAV = {
   ],
   teacher: [
     { label: 'Dashboard', icon: 'grid', href: '/teacher/dashboard.html' },
+    { label: 'Projects', icon: 'file-text', href: '/teacher/projects.html', collapsible: true },
     { label: 'Meeting Logs', icon: 'file-text', href: '/teacher/meetings.html' },
     { label: 'Resources', icon: 'upload', href: '/teacher/resources.html' },
     { label: 'Student Uploads', icon: 'upload', href: '/teacher/uploads.html' },
@@ -107,17 +108,34 @@ function toggleNavGroup(btn) {
 
 async function loadNavProjects() {
   const user = getUser();
-  if (!user || user.role !== 'student') return;
-  try {
-    const data = await get('/api/student/group');
-    const children = document.getElementById('navChildren_Projects');
-    if (!children) return;
-    if (data && data.project_id) {
-      children.innerHTML = '<a class="nav-child-item" href="/student/projects.html#project-' + data.project_id + '">' + (data.title || 'My Project') + '</a>';
-    } else {
+  if (!user) return;
+  const children = document.getElementById('navChildren_Projects');
+  if (!children) return;
+  if (user.role === 'student') {
+    try {
+      const data = await get('/api/student/group');
+      if (data && data.project_id) {
+        children.innerHTML = '<a class="nav-child-item" href="/student/projects.html#project-' + data.project_id + '">' + (data.title || 'My Project') + '</a>';
+      } else {
+        children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
+      }
+    } catch {
       children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
     }
-  } catch {}
+  } else if (user.role === 'teacher') {
+    try {
+      const data = await get('/api/teacher/projects');
+      if (data && data.length) {
+        children.innerHTML = data.map(p =>
+          '<a class="nav-child-item" href="/teacher/projects.html#project-' + p.id + '">' + (p.title || p.group_name) + '</a>'
+        ).join('');
+      } else {
+        children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
+      }
+    } catch {
+      children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
+    }
+  }
 }
 
 function toggleSidebar() {

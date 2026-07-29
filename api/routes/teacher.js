@@ -27,6 +27,17 @@ router.get('/groups', async (req, res) => {
   res.json(rows);
 });
 
+router.get('/projects', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT p.id, p.title, g.group_name, p.status
+    FROM projects p
+    JOIN groups g ON g.id = p.group_id
+    WHERE g.teacher_id = $1
+    ORDER BY p.updated_at DESC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
 router.get('/students', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT u.id AS student_id, p.id AS project_id, u.email, u.full_name, p.title, p.status, p.submitted_at, p.updated_at, g.id AS group_id, g.group_name
