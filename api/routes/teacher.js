@@ -128,7 +128,7 @@ router.post('/projects/:projectId/comments', async (req, res) => {
       type: 'comment',
       title: 'New Comment',
       message: content.length > 120 ? content.slice(0, 120) + '...' : content,
-      relatedUrl: '/student/comments.html'
+      relatedUrl: '/student/projects.html'
     });
   }
 

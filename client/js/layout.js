@@ -20,7 +20,6 @@ const NAV = {
   student: [
     { label: 'Projects', icon: 'file-text', href: '/student/projects.html' },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
-    { label: 'Comments', icon: 'message-square', href: '/student/comments.html' },
     { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
     { label: 'Uploads', icon: 'upload', href: '/student/uploads.html' },
     { label: 'From Teacher', icon: 'upload', href: '/student/teacher-uploads.html' },
@@ -133,7 +132,7 @@ function renderPage(title) {
 function openChat() {
   const user = getUser();
   if (!user) return;
-  if (user.role === 'student') window.location.href = '/student/comments.html';
+  if (user.role === 'student') window.location.href = '/student/projects.html';
   else if (user.role === 'teacher') {
     const id = localStorage.getItem('viewProjectId');
     if (id) window.location.href = '/teacher/project-detail.html';
