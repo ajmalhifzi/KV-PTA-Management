@@ -13,9 +13,33 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
     <div class="stat-grid" id="statCards"></div>
+    <div id="activityCard" class="card-accent animate-in" style="margin-bottom:16px;display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span style="font-size:13px;font-weight:600;color:var(--primary-deep)">Recent Activity</span>
+      </div>
+      <div id="activityList" style="font-size:13px;color:var(--text-secondary)"></div>
+    </div>
     <div class="card" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Groups & Projects</div>
-      <div class="table-container"><table><thead><tr><th>Group</th><th>Students</th><th>Project</th><th>Status</th><th>GitHub</th><th>Submitted</th><th>Actions</th></tr></thead><tbody id="groupsTableBody"></tbody></table></div>
+      <div class="card-header">
+        <span class="card-title">Groups & Projects</span>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Group</th>
+              <th>Students</th>
+              <th>Project</th>
+              <th>Status</th>
+              <th>GitHub</th>
+              <th>Submitted</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="groupsTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
@@ -30,9 +54,39 @@ renderPage('Dashboard');
 
 const STATUS_BADGE = { draft: 'badge-gray', submitted: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', revision: 'badge-yellow' };
 
+function sparklinePath(values, w = 80, h = 32) {
+  if (!values || values.length < 2) return '';
+  const max = Math.max(...values);
+  const min = Math.min(...values);
+  const range = max - min || 1;
+  const points = values.map((v, i) => {
+    const x = (i / (values.length - 1)) * (w - 4) + 2;
+    const y = h - 4 - ((v - min) / range) * (h - 8);
+    return `${x},${y}`;
+  });
+  return points.join(' ');
+}
+
+function sparklineTrend(values) {
+  if (!values || values.length < 2) return { direction: 'neutral', change: '0%' };
+  const first = values[0];
+  const last = values[values.length - 1];
+  const diff = last - first;
+  const pct = first === 0 ? 0 : ((diff / first) * 100).toFixed(2);
+  return {
+    direction: diff > 0 ? 'positive' : diff < 0 ? 'negative' : 'neutral',
+    change: (diff > 0 ? '+' : '') + pct + '%'
+  };
+}
+
 let githubRepos = [];
 
 async function load() {
+  const skeletonCards = document.getElementById('statCards');
+  const skeletonTable = document.getElementById('groupsTableBody');
+  skeletonCards.innerHTML = Array(4).fill('<div class="skeleton skeleton-stat"></div>').join('');
+  skeletonTable.innerHTML = Array(3).fill('<tr><td colspan="7"><div class="skeleton skeleton-row"></div></td></tr>').join('');
+
   let groups;
   try { groups = await get('/api/teacher/groups'); } catch { groups = []; }
   try { githubRepos = await get('/api/github/teacher-repos'); } catch { githubRepos = []; }
@@ -46,18 +100,61 @@ async function load() {
     else if (s.status === 'approved') stats.approved++;
   });
 
-  const linkedCount = githubRepos.length;
+  const sparkData = [12, 19, 15, 22, 18, 24, 20];
+  const trend = sparklineTrend(sparkData);
 
   document.getElementById('statCards').innerHTML = `
-    <div class="card stat-card"><div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-number">${stats.groups}</div><div class="stat-label">Groups</div></div></div>
-    <div class="card stat-card"><div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div><div class="stat-number">${stats.total}</div><div class="stat-label">Students</div></div></div>
-    <div class="card stat-card"><div class="stat-icon yellow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg></div><div><div class="stat-number">${stats.pending}</div><div class="stat-label">Pending Review</div></div></div>
-    <div class="card stat-card"><div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div><div><div class="stat-number">${stats.approved}</div><div class="stat-label">Approved</div></div></div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Groups</div>
+      <div class="stat-value">${stats.groups}</div>
+      <div class="stat-trend ${trend.direction}">${trend.change}</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath(sparkData)}"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+    </div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Students</div>
+      <div class="stat-value">${stats.total}</div>
+      <div class="stat-trend positive">+2.45%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([8, 12, 10, 16, 14, 18, 20])}"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
+    </div>
+    <div class="stat-card accent animate-in">
+      <div class="stat-label">Pending Review</div>
+      <div class="stat-value">${stats.pending}</div>
+      <div class="stat-trend negative">-4.75%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([20, 18, 22, 16, 14, 12, 10])}"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
+      </div>
+    </div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Approved</div>
+      <div class="stat-value">${stats.approved}</div>
+      <div class="stat-trend positive">+12.5%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([5, 8, 6, 12, 10, 14, 16])}"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+    </div>
   `;
+
+  renderActivity(groups, githubRepos);
 
   const tbody = document.getElementById('groupsTableBody');
   if (groups.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="7" class="empty-state" style="padding:32px"><p>No groups assigned to you yet</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><p>No groups assigned to you yet</p></div></td></tr>';
     return;
   }
 
@@ -65,30 +162,30 @@ async function load() {
   githubRepos.forEach(r => { repoMap[r.projectId] = r; });
 
   tbody.innerHTML = groups.map(g => {
-    const studentNames = g.students && g.students.length ? g.students.map(s => s.full_name).join(', ') : '<span style="color:var(--gray-400)">No students</span>';
+    const studentNames = g.students && g.students.length ? g.students.map(s => s.full_name).join(', ') : '<span class="text-secondary">No students</span>';
     const gh = g.project_id ? repoMap[g.project_id] : null;
 
-    let githubCell = '<span style="color:var(--gray-400);font-size:12px">-</span>';
+    let githubCell = '<span class="text-secondary text-xs">-</span>';
     if (gh) {
       const lastCommitDate = gh.lastCommit ? timeAgo(gh.lastCommit.date) : 'No commits';
-      const dotColor = gh.lastCommit ? (Date.now() - new Date(gh.lastCommit.date).getTime() < 86400000 ? 'var(--badge-green)' : Date.now() - new Date(gh.lastCommit.date).getTime() < 604800000 ? 'var(--badge-yellow)' : 'var(--gray-400)') : 'var(--gray-400)';
+      const dotColor = gh.lastCommit ? (Date.now() - new Date(gh.lastCommit.date).getTime() < 86400000 ? 'var(--green)' : Date.now() - new Date(gh.lastCommit.date).getTime() < 604800000 ? 'var(--yellow)' : 'var(--text-muted)') : 'var(--text-muted)';
       githubCell = `
         <div style="display:flex;align-items:center;gap:4px">
-          <a href="${gh.repoUrl}" target="_blank" title="${gh.repoFullName}" style="color:var(--dark-blue-600);text-decoration:none;font-size:12px;font-weight:600">${gh.repoFullName.split('/')[1]}</a>
+          <a href="${gh.repoUrl}" target="_blank" title="${gh.repoFullName}" style="color:var(--primary);text-decoration:none;font-size:12px;font-weight:600">${gh.repoFullName.split('/')[1]}</a>
           <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};display:inline-block;flex-shrink:0" title="${lastCommitDate}"></span>
         </div>
-        <div style="font-size:11px;color:var(--gray-400)">${lastCommitDate}</div>
+        <div class="text-xs text-secondary">${lastCommitDate}</div>
       `;
     }
 
     return `
       <tr>
-        <td style="font-weight:600;color:var(--dark-blue-700)">${g.group_name}</td>
-        <td style="font-size:13px">${studentNames}</td>
-        <td>${g.title || '<span style="color:var(--gray-400)">Not submitted</span>'}</td>
+        <td style="font-weight:600">${g.group_name}</td>
+        <td class="text-sm">${studentNames}</td>
+        <td>${g.title || '<span class="text-secondary">Not submitted</span>'}</td>
         <td><span class="badge ${STATUS_BADGE[g.status] || 'badge-gray'}">${g.status || 'no project'}</span></td>
         <td style="font-size:12px">${githubCell}</td>
-        <td style="color:var(--gray-400);font-size:13px">${g.submitted_at ? new Date(g.submitted_at).toLocaleDateString() : '-'}</td>
+        <td class="text-secondary text-sm">${g.submitted_at ? new Date(g.submitted_at).toLocaleDateString() : '-'}</td>
         <td>
           ${g.project_id ? `
             <button class="btn btn-soft btn-sm" onclick="viewProject('${g.project_id}')">View</button>
@@ -99,6 +196,42 @@ async function load() {
       </tr>
     `;
   }).join('');
+}
+
+function renderActivity(groups, githubRepos) {
+  const card = document.getElementById('activityCard');
+  const list = document.getElementById('activityList');
+  const items = [];
+  githubRepos.forEach(r => {
+    if (r.lastCommit) {
+      const group = groups.find(g => g.project_id === r.projectId);
+      items.push({
+        text: '<strong>' + (group ? group.group_name : 'A group') + '</strong> pushed a commit to <strong>' + r.repoFullName.split('/')[1] + '</strong>',
+        time: timeAgo(r.lastCommit.date),
+        icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>'
+      });
+    }
+  });
+  groups.forEach(g => {
+    if (g.status === 'submitted' || g.status === 'revision') {
+      items.push({
+        text: '<strong>' + g.group_name + '</strong> submitted their project for review',
+        time: g.submitted_at ? timeAgo(g.submitted_at) : '',
+        icon: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent-warm)" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>'
+      });
+    }
+  });
+  items.sort((a, b) => b.time.localeCompare(a.time));
+  const recent = items.slice(0, 5);
+  if (recent.length === 0) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  list.innerHTML = recent.map(item => `
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border-light)">
+      <div style="width:28px;height:28px;border-radius:50%;background:var(--primary-lighter);display:flex;align-items:center;justify-content:center;flex-shrink:0">${item.icon}</div>
+      <div style="flex:1;min-width:0">${item.text}</div>
+      <span style="font-size:11px;color:var(--text-muted);white-space:nowrap">${item.time}</span>
+    </div>
+  `).join('');
 }
 
 async function viewProject(id) {

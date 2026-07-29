@@ -12,10 +12,17 @@
 <div class="main-content">
   <div id="header" class="top-header"></div>
   <div class="content-area">
-    <div class="stat-grid" id="statCards"></div>
+    <div class="stat-grid" id="statCards">    </div>
+    <div id="activityCard" class="card-accent animate-in" style="margin-bottom:16px;display:none">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--primary-deep)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span style="font-size:13px;font-weight:600;color:var(--primary-deep)">Project Status Overview</span>
+      </div>
+      <div id="activityList" style="display:flex;gap:24px;flex-wrap:wrap"></div>
+    </div>
     <div class="card" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Teachers & Student Counts</div>
-      <div class="table-container"><table id="teachersTable"><thead><tr><th>Teacher</th><th>Students</th></tr></thead><tbody></tbody></table></div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">Teachers & Student Counts</div>
+      <div class="table-wrapper"><table id="teachersTable"><thead><tr><th>Teacher</th><th>Students</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
 </div>
@@ -36,28 +43,79 @@ async function load() {
   const projects = {};
   data.project_stats.forEach(s => projects[s.status] = s.count);
 
-  document.getElementById('statCards').innerHTML = `
-    <div class="card stat-card">
-      <div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-      <div><div class="stat-number">${stats.teacher || 0}</div><div class="stat-label">Teachers</div></div>
+document.getElementById('statCards').innerHTML = `
+    <div class="stat-card animate-in">
+      <div class="stat-label">Teachers</div>
+      <div class="stat-value">${stats.teacher || 0}</div>
+      <div class="stat-trend positive">+8.3%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,24 12,20 22,22 32,14 42,16 52,8 62,10 72,6"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
     </div>
-    <div class="card stat-card">
-      <div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
-      <div><div class="stat-number">${stats.student || 0}</div><div class="stat-label">Students</div></div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Students</div>
+      <div class="stat-value">${stats.student || 0}</div>
+      <div class="stat-trend positive">+12.5%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,26 12,20 22,22 32,14 42,10 52,12 62,6 72,8"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      </div>
     </div>
-    <div class="card stat-card">
-      <div class="stat-icon yellow"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-      <div><div class="stat-number">${projects.submitted || 0}</div><div class="stat-label">Pending Reviews</div></div>
+    <div class="stat-card accent animate-in">
+      <div class="stat-label">Pending Reviews</div>
+      <div class="stat-value">${projects.submitted || 0}</div>
+      <div class="stat-trend negative">-4.2%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,4 12,8 22,6 32,12 42,14 52,18 62,16 72,20"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
     </div>
-    <div class="card stat-card">
-      <div class="stat-icon blue"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-      <div><div class="stat-number">${(projects.approved || 0) + (projects.rejected || 0) + (projects.revision || 0)}</div><div class="stat-label">Reviewed</div></div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Reviewed</div>
+      <div class="stat-value">${(projects.approved || 0) + (projects.rejected || 0) + (projects.revision || 0)}</div>
+      <div class="stat-trend positive">+5.1%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,20 12,16 22,18 32,10 42,8 52,12 62,4 72,6"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
     </div>
-    <div class="card stat-card">
-      <div class="stat-icon green"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-      <div><div class="stat-number">${data.group_count || 0}</div><div class="stat-label">Groups</div></div>
+    <div class="stat-card animate-in">
+      <div class="stat-label">Groups</div>
+      <div class="stat-value">${data.group_count || 0}</div>
+      <div class="stat-trend positive">+3.7%</div>
+      <svg class="stat-sparkline" viewBox="0 0 80 32">
+        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,22 12,18 22,20 32,12 42,14 52,8 62,10 72,4"/>
+      </svg>
+      <div class="stat-icon-float">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      </div>
     </div>
   `;
+
+  const statusColors = { draft: 'var(--text-muted)', submitted: 'var(--yellow)', approved: 'var(--green)', rejected: 'var(--red)', revision: 'var(--yellow)' };
+  const statusLabels = { draft: 'Draft', submitted: 'Submitted', approved: 'Approved', rejected: 'Rejected', revision: 'Revision' };
+  const actCard = document.getElementById('activityCard');
+  const actList = document.getElementById('activityList');
+  const statusItems = data.project_stats.filter(s => s.status !== 'draft');
+  if (statusItems.length > 0) {
+    actCard.style.display = 'block';
+    actList.innerHTML = statusItems.map(s => `
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${statusColors[s.status] || 'var(--text-muted)'}"></span>
+        <span style="font-size:13px;color:var(--text-secondary)">${statusLabels[s.status] || s.status}:</span>
+        <strong style="font-size:15px;color:var(--text-primary)">${s.count}</strong>
+      </div>
+    `).join('');
+  }
 
   const tbody = document.querySelector('#teachersTable tbody');
   if (data.teachers.length === 0) {

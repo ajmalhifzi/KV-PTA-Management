@@ -13,11 +13,11 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
     <div class="card" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
-        <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">All Students</span>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+        <span style="font-weight:600;font-size:14px;color:var(--text-primary)">All Students</span>
         <a class="btn btn-primary btn-sm" href="/admin/groups.html">Manage Groups</a>
       </div>
-      <div class="table-container"><table><thead><tr><th>Name</th><th>Email</th><th>Group</th><th>Teacher</th><th>Joined</th></tr></thead><tbody id="studentsList"></tbody></table></div>
+      <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Email</th><th>Group</th><th>Teacher</th><th>Joined</th></tr></thead><tbody id="studentsList"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -42,8 +42,8 @@ async function load() {
         <td>${s.full_name}</td>
         <td>${s.email}</td>
         <td>${s.group_id ? '<span class="badge badge-blue">' + s.group_name + '</span>' : '<span class="badge badge-gray">Unassigned</span>'}</td>
-        <td>${s.teacher_name || '<span style="color:var(--gray-400)">-</span>'}</td>
-        <td style="color:var(--gray-400);font-size:13px">${new Date(s.created_at).toLocaleDateString()}</td>
+        <td>${s.teacher_name || '<span style="color:var(--text-muted)">-</span>'}</td>
+        <td style="color:var(--text-muted);font-size:13px">${new Date(s.created_at).toLocaleDateString()}</td>
       </tr>
     `).join('');
   }

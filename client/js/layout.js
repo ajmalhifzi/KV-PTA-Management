@@ -12,13 +12,13 @@ const NAV = {
   ],
   teacher: [
     { label: 'Dashboard', icon: 'grid', href: '/teacher/dashboard.html' },
-    { label: 'Projects', icon: 'file-text', href: '/teacher/projects.html', collapsible: true },
+    { label: 'Projects', icon: 'file-text', href: '/teacher/projects.html' },
     { label: 'Meeting Logs', icon: 'file-text', href: '/teacher/meetings.html' },
     { label: 'Resources', icon: 'upload', href: '/teacher/resources.html' },
     { label: 'Student Uploads', icon: 'upload', href: '/teacher/uploads.html' },
   ],
   student: [
-    { label: 'Projects', icon: 'file-text', href: '/student/projects.html', collapsible: true },
+    { label: 'Projects', icon: 'file-text', href: '/student/projects.html' },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
     { label: 'Comments', icon: 'message-square', href: '/student/comments.html' },
     { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
@@ -40,11 +40,11 @@ const ICONS = {
 };
 
 const NOTIFICATION_ICONS = {
-  meeting: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
-  upload: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
-  resource: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
-  comment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
-  project_status: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
+  meeting: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>',
+  upload: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>',
+  resource: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>',
+  comment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>',
+  project_status: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>',
 };
 
 function renderSidebar() {
@@ -54,120 +54,72 @@ function renderSidebar() {
   const currentPath = window.location.pathname;
 
   const sidebar = document.getElementById('sidebar');
-  const collapsed = localStorage.getItem('sidebar_collapsed') === 'true';
-
   sidebar.innerHTML = `
-    <div class="sidebar-header">
-      <div class="sidebar-logo">KV<span> PTA</span></div>
-      <button class="sidebar-toggle" onclick="toggleSidebar()">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-      </button>
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="4" y="4" width="20" height="20" rx="4" stroke="var(--primary)"/>
+        <path d="M10 14l3 3 5-6" stroke="var(--primary)"/>
+      </svg>
     </div>
     <nav class="sidebar-nav">
       ${navItems.map(item => {
-        if (item.collapsible) {
-          return `
-            <div class="nav-group">
-              <div style="display:flex;align-items:center">
-                <a class="nav-item ${currentPath === item.href ? 'active' : ''}" href="${item.href}" style="flex:1">
-                  ${ICONS[item.icon] || ''}
-                  <span>${item.label}</span>
-                </a>
-                <button class="nav-toggle" onclick="event.stopPropagation();toggleNavGroup(this)" aria-label="Toggle projects">&#9654;</button>
-              </div>
-              <div class="nav-children" id="navChildren_${item.label}"></div>
-            </div>
-          `;
-        }
+        const isActive = currentPath === item.href;
         return `
-          <a class="nav-item ${currentPath === item.href ? 'active' : ''}" href="${item.href}">
+          <a class="nav-item ${isActive ? 'active' : ''}" href="${item.href}">
             ${ICONS[item.icon] || ''}
-            <span>${item.label}</span>
+            <span class="nav-tooltip">${item.label}</span>
           </a>
         `;
-      })}
+      }).join('')}
     </nav>
-    <div style="padding: 8px; border-top: 1px solid var(--gray-200);">
+    <div class="sidebar-footer">
       <a class="nav-item" onclick="logout()">
         ${ICONS['log-out']}
-        <span>Logout</span>
+        <span class="nav-tooltip">Logout</span>
       </a>
     </div>
   `;
-
-  if (collapsed) sidebar.classList.add('collapsed');
-  loadNavProjects();
-}
-
-function toggleNavGroup(btn) {
-  const children = btn.parentElement.nextElementSibling;
-  if (!children) return;
-  const isOpen = children.classList.toggle('open');
-  btn.classList.toggle('open', isOpen);
-}
-
-async function loadNavProjects() {
-  const user = getUser();
-  if (!user) return;
-  const children = document.getElementById('navChildren_Projects');
-  if (!children) return;
-  if (user.role === 'student') {
-    try {
-      const data = await get('/api/student/group');
-      if (data && data.project_id) {
-        children.innerHTML = '<a class="nav-child-item" href="/student/projects.html#project-' + data.project_id + '">' + (data.title || 'My Project') + '</a>';
-      } else {
-        children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
-      }
-    } catch {
-      children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
-    }
-  } else if (user.role === 'teacher') {
-    try {
-      const data = await get('/api/teacher/projects');
-      if (data && data.length) {
-        children.innerHTML = data.map(p =>
-          '<a class="nav-child-item" href="/teacher/projects.html#project-' + p.id + '">' + (p.title || p.group_name) + '</a>'
-        ).join('');
-      } else {
-        children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
-      }
-    } catch {
-      children.innerHTML = '<span class="nav-child-item" style="cursor:default;color:var(--gray-400);font-style:italic">No projects</span>';
-    }
-  }
-}
-
-function toggleSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  sidebar.classList.toggle('collapsed');
-  localStorage.setItem('sidebar_collapsed', sidebar.classList.contains('collapsed'));
 }
 
 function renderHeader(title) {
   const user = getUser();
   const header = document.getElementById('header');
   const initials = user ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
+  const firstName = user ? user.full_name.split(' ')[0] : 'User';
+
+  const hour = new Date().getHours();
+  let greeting = 'Hello';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 17) greeting = 'Good afternoon';
+  else greeting = 'Good evening';
+
   header.innerHTML = `
-    <div class="page-title">${title}</div>
+    <div class="header-left">
+      <div class="header-subtitle" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-label);margin-bottom:2px">${title}</div>
+      <div class="header-greeting">${greeting}, ${firstName}!</div>
+    </div>
     <div class="header-right">
-      <div class="notif-container" style="position:relative">
-        <button class="notif-btn" onclick="toggleNotif()" style="background:none;border:none;cursor:pointer;position:relative;padding:6px;display:flex;align-items:center">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--gray-500)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          <span id="notifBadge" style="display:none;position:absolute;top:2px;right:2px;width:16px;height:16px;border-radius:50%;background:#c92a2a;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700">0</span>
+      <div class="search-bar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" placeholder="Search..." readonly>
+      </div>
+      <div class="notif-container">
+        <button class="icon-btn" onclick="toggleNotif()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge" id="notifBadge" style="display:none">0</span>
         </button>
-        <div id="notifDropdown" class="notif-dropdown" style="display:none">
-          <div style="padding:10px 14px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center">
-            <span style="font-weight:600;font-size:13px;color:var(--dark-blue-800)">Notifications</span>
-            <button class="btn btn-sm" style="font-size:10px;padding:2px 8px" onclick="markAllRead()">Mark all read</button>
+        <div class="notif-dropdown" id="notifDropdown" style="display:none">
+          <div class="notif-header">
+            <span>Notifications</span>
+            <button class="btn btn-sm btn-ghost" onclick="markAllRead()" style="font-size:10px;padding:2px 8px">Mark all read</button>
           </div>
-          <div id="notifList" style="max-height:360px;overflow-y:auto"></div>
+          <div class="notif-list" id="notifList"></div>
         </div>
       </div>
-      <div class="user-badge">
-        <span>${user ? user.full_name : ''}</span>
-        <div class="user-avatar">${initials}</div>
-      </div>
+      <button class="icon-btn" onclick="openChat()" title="Messages">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </button>
+      <div class="user-avatar">${initials}</div>
     </div>
   `;
   loadNotifCount();
@@ -176,6 +128,17 @@ function renderHeader(title) {
 function renderPage(title) {
   renderSidebar();
   renderHeader(title);
+}
+
+function openChat() {
+  const user = getUser();
+  if (!user) return;
+  if (user.role === 'student') window.location.href = '/student/comments.html';
+  else if (user.role === 'teacher') {
+    const id = localStorage.getItem('viewProjectId');
+    if (id) window.location.href = '/teacher/project-detail.html';
+    else window.location.href = '/teacher/projects.html';
+  }
 }
 
 /* Notifications */
@@ -207,7 +170,7 @@ async function loadNotifList() {
     const notifs = await get('/api/notifications');
     const list = document.getElementById('notifList');
     if (!notifs.length) {
-      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--gray-400);font-size:13px">No notifications</div>';
+      list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--text-secondary);font-size:13px">No notifications</div>';
       return;
     }
     list.innerHTML = notifs.map(n => `
@@ -218,7 +181,7 @@ async function loadNotifList() {
           ${n.message ? '<div class="notif-msg">' + n.message + '</div>' : ''}
           <div class="notif-time">${timeAgo(n.created_at)}</div>
         </div>
-        ${n.is_read ? '' : '<div style="width:8px;height:8px;border-radius:50%;background:var(--dark-blue-600);flex-shrink:0"></div>'}
+        ${n.is_read ? '' : '<div class="notif-dot"></div>'}
       </div>
     `).join('');
   } catch {}
@@ -248,8 +211,8 @@ async function markAllRead() {
     loadNotifCount();
     document.querySelectorAll('.notif-item').forEach(el => {
       el.classList.remove('unread');
-      const dot = el.querySelector(':scope > div:last-child');
-      if (dot && dot.style) dot.style.display = 'none';
+      const dot = el.querySelector('.notif-dot');
+      if (dot) dot.style.display = 'none';
     });
   } catch {}
 }
@@ -266,7 +229,6 @@ function timeAgo(val) {
   return new Date(val).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
 }
 
-// Close notification dropdown on outside click
 document.addEventListener('click', function(e) {
   const dd = document.getElementById('notifDropdown');
   if (dd && dd.style.display !== 'none') {
@@ -277,5 +239,4 @@ document.addEventListener('click', function(e) {
   }
 });
 
-// Poll unread count every 30s
 setInterval(loadNotifCount, 30000);

@@ -14,7 +14,7 @@
   <div class="content-area">
 
     <div class="card" style="padding:0;margin-bottom:16px">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">New Meeting Log</div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">New Meeting Log</div>
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <select class="form-input" id="groupSelect" style="flex:1;min-width:180px">
@@ -27,7 +27,7 @@
               <span id="meetingLabel">Meeting date & time</span>
             </button>
             <div id="meetingPicker" class="picker-popup" style="display:none">
-              <div style="font-size:12px;font-weight:600;color:var(--dark-blue-800);margin-bottom:6px">Meeting date & time</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">Meeting date & time</div>
               <input type="date" id="meetingDate" class="form-input" style="width:100%;margin-bottom:4px">
               <input type="time" id="meetingTime" class="form-input" style="width:100%;margin-bottom:6px">
               <div style="display:flex;gap:4px;justify-content:flex-end">
@@ -43,7 +43,7 @@
               <span id="nextLabel">Next meeting</span>
             </button>
             <div id="nextPicker" class="picker-popup" style="display:none">
-              <div style="font-size:12px;font-weight:600;color:var(--dark-blue-800);margin-bottom:6px">Next meeting date & time</div>
+              <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">Next meeting date & time</div>
               <input type="date" id="nextMeetingDate" class="form-input" style="width:100%;margin-bottom:4px">
               <input type="time" id="nextMeetingTime" class="form-input" style="width:100%;margin-bottom:6px">
               <div style="display:flex;gap:4px;justify-content:flex-end">
@@ -66,17 +66,17 @@
     </div>
 
     <div class="card" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Meeting Logs</div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">Meeting Logs</div>
       <div id="meetingsContainer" style="padding:16px 20px"></div>
     </div>
 
   </div>
 </div>
 
-<div id="confirmModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeConfirm()">
+<div id="confirmModal" class="modal-overlay" onclick="if(event.target===this)closeConfirm()">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:380px">
     <h3>Confirm Delete</h3>
-    <p style="font-size:14px;color:var(--gray-600);margin-bottom:16px" id="confirmText"></p>
+    <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px" id="confirmText"></p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
       <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
@@ -84,7 +84,7 @@
   </div>
 </div>
 
-<div id="editModal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeEditModal()">
+<div id="editModal" class="modal-overlay" onclick="if(event.target===this)closeEditModal()">
   <div class="modal" onclick="event.stopPropagation()" style="max-width:500px">
     <h3>Edit Meeting Log</h3>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
@@ -98,7 +98,7 @@
           <span id="editMeetingLabel">Meeting date & time</span>
         </button>
         <div id="editMeetingPicker" class="picker-popup" style="display:none">
-          <div style="font-size:12px;font-weight:600;color:var(--dark-blue-800);margin-bottom:6px">Meeting date & time</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">Meeting date & time</div>
           <input type="date" id="editMeetingDate" class="form-input" style="width:100%;margin-bottom:4px">
           <input type="time" id="editMeetingTime" class="form-input" style="width:100%;margin-bottom:6px">
           <div style="display:flex;gap:4px;justify-content:flex-end">
@@ -114,7 +114,7 @@
           <span id="editNextLabel">Next meeting</span>
         </button>
         <div id="editNextPicker" class="picker-popup" style="display:none">
-          <div style="font-size:12px;font-weight:600;color:var(--dark-blue-800);margin-bottom:6px">Next meeting date & time</div>
+          <div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:6px">Next meeting date & time</div>
           <input type="date" id="editNextMeetingDate" class="form-input" style="width:100%;margin-bottom:4px">
           <input type="time" id="editNextMeetingTime" class="form-input" style="width:100%;margin-bottom:6px">
           <div style="display:flex;gap:4px;justify-content:flex-end">
@@ -169,7 +169,7 @@ async function load() {
   const container = document.getElementById('meetingsContainer');
 
   if (meetings.length === 0) {
-    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--gray-400);font-size:13px">No meeting logs yet</div>';
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--text-muted);font-size:13px">No meeting logs yet</div>';
     return;
   }
 
@@ -188,7 +188,7 @@ async function load() {
     const d = new Date(key + 'T12:00:00');
     const label = labels[key] || d.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
     return `
-      <div style="font-weight:700;font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
+      <div style="font-weight:700;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
       ${groups[key].map(m => renderMeetingCard(m)).join('')}
     `;
   }).join('');
@@ -277,21 +277,21 @@ function renderMeetingCard(m) {
   const nextDate = m.next_meeting ? fmtDatetime(m.next_meeting) : null;
   const studentNames = m.students && m.students.length ? m.students.map(s => s.full_name).join(', ') : '';
   return `
-    <div style="border:1.5px solid var(--gray-200);border-radius:8px;padding:12px 16px;margin-bottom:8px">
+    <div style="border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:8px">
       <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-weight:600;font-size:14px;color:var(--dark-blue-800)">${m.group_name}</span>
+            <span style="font-weight:600;font-size:14px;color:var(--text-primary)">${m.group_name}</span>
             <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Group</span>
-            ${studentNames ? '<span style="font-size:11px;color:var(--gray-400)">' + studentNames + '</span>' : ''}
-            <span style="font-size:11px;color:var(--gray-500)">${meetingTime}</span>
+            ${studentNames ? '<span style="font-size:11px;color:var(--text-muted)">' + studentNames + '</span>' : ''}
+            <span style="font-size:11px;color:var(--text-secondary)">${meetingTime}</span>
           </div>
-          <div style="font-size:13px;color:var(--gray-700);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
-          ${m.action_items ? '<div style="font-size:12px;color:var(--dark-blue-600);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}
-          ${nextDate ? '<div style="font-size:11px;color:var(--gray-500)">Next meeting: ' + nextDate + '</div>' : ''}
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
+          ${m.action_items ? '<div style="font-size:12px;color:var(--primary);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}
+          ${nextDate ? '<div style="font-size:11px;color:var(--text-secondary)">Next meeting: ' + nextDate + '</div>' : ''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-sm" style="background:#fff;border:1px solid var(--gray-300)" onclick="editMeeting('${m.id}')">Edit</button>
+          <button class="btn btn-sm" style="background:#fff;border:1px solid var(--border)" onclick="editMeeting('${m.id}')">Edit</button>
           <button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="confirmDelete('${m.id}')">Delete</button>
         </div>
       </div>

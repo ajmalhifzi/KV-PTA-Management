@@ -7,8 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css">
 <style>
-  .field-label { display:block;font-size:12px;font-weight:600;color:var(--gray-500);margin-bottom:2px }
-  .field-value { font-size:14px;color:var(--dark-blue-800);margin-bottom:12px }
+  .field-label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px }
+  .field-value { font-size:14px;color:var(--text-primary);margin-bottom:12px }
 </style>
 </head>
 <body>
@@ -19,30 +19,30 @@
 
     <div id="noProject" style="display:none">
       <div class="card" style="max-width:600px;text-align:center;padding:48px">
-        <p style="font-size:16px;font-weight:600;color:var(--dark-blue-800);margin-bottom:8px">No Projects Yet</p>
-        <p style="font-size:13px;color:var(--gray-500);margin-bottom:20px">No projects are assigned to you yet.</p>
+        <p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>
+        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>
         <button class="btn btn-primary" onclick="window.location.href='/teacher/dashboard.html'">Go to Dashboard</button>
       </div>
     </div>
 
     <div id="projectView" style="display:none">
-      <div id="projectInfo" class="card" style="margin-bottom:16px">
+      <div id="projectInfo" class="card animate-in" style="margin-bottom:16px">
         <div id="projectInfoHeader"></div>
         <div id="projectInfoBody" style="margin-top:16px"></div>
       </div>
 
       <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start">
-        <div id="githubCard" class="card" style="display:none">
+        <div id="githubCard" class="card animate-in" style="display:none">
           <div id="githubCardContent"></div>
         </div>
         <div>
-          <div class="card" style="margin-bottom:16px;padding:24px;text-align:center">
-            <div style="font-size:13px;font-weight:600;color:var(--gray-400);margin-bottom:4px">Photo Slider</div>
-            <p style="font-size:12px;color:var(--gray-400)">Coming soon</p>
+          <div class="card animate-in" style="margin-bottom:16px;padding:24px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Photo Slider</div>
+            <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
           </div>
-          <div class="card" style="padding:24px;text-align:center">
-            <div style="font-size:13px;font-weight:600;color:var(--gray-400);margin-bottom:4px">Comment & Chat</div>
-            <p style="font-size:12px;color:var(--gray-400)">Coming soon</p>
+          <div class="card animate-in" style="padding:24px;text-align:center">
+            <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Comment & Chat</div>
+            <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
           </div>
         </div>
       </div>
@@ -116,10 +116,10 @@ function renderProjectInfo(data) {
   document.getElementById('projectInfoHeader').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
       <div>
-        <h2 style="font-size:18px;font-weight:700;color:var(--dark-blue-800)">${escapeHtml(data.title || '(No title)')}</h2>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:13px;color:var(--gray-500)">
-          <span><strong style="color:var(--dark-blue-700)">Group:</strong> ${escapeHtml(data.group_name)}</span>
-          ${students ? '<span><strong style="color:var(--dark-blue-700)">Students:</strong> ' + students + '</span>' : ''}
+        <h2 style="font-size:18px;font-weight:700;color:var(--text-primary)">${escapeHtml(data.title || '(No title)')}</h2>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:13px;color:var(--text-secondary)">
+          <span><strong style="color:var(--primary)">Group:</strong> ${escapeHtml(data.group_name)}</span>
+          ${students ? '<span><strong style="color:var(--primary)">Students:</strong> ' + students + '</span>' : ''}
         </div>
       </div>
       <span class="badge ${badgeClass}" style="font-size:12px">${status}</span>
@@ -154,11 +154,11 @@ function renderGitHub(data) {
   const content = document.getElementById('githubCardContent');
   content.innerHTML = `
     <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--dark-blue-600)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-      <span style="font-size:14px;font-weight:600;color:var(--dark-blue-800)">GitHub Repository</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--primary)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
+      <span style="font-size:14px;font-weight:600;color:var(--text-primary)">GitHub Repository</span>
     </div>
     <div id="githubContent">
-      <div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Loading GitHub data...</div>
+      <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">Loading GitHub data...</div>
     </div>
   `;
 
@@ -170,13 +170,13 @@ async function loadTeacherGitHubData(data) {
   try {
     const summary = await get('/api/github/repo-summary/' + data.id);
     if (!summary.linked) {
-      content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">No GitHub repository linked to this project.</div>';
+      content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">No GitHub repository linked to this project.</div>';
       return;
     }
 
     let extraInfo = '';
     if (summary.lastCommit) {
-      extraInfo += '<div style="margin-top:4px;font-size:12px;color:var(--gray-400)">Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author + '</div>';
+      extraInfo += '<div style="margin-top:4px;font-size:12px;color:var(--text-muted)">Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author + '</div>';
     }
     if (summary.language) {
       extraInfo += ' <span class="badge badge-blue" style="font-size:9px">' + summary.language + '</span>';
@@ -187,7 +187,7 @@ async function loadTeacherGitHubData(data) {
 
     content.innerHTML = `
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <a href="${summary.repoUrl}" target="_blank" style="font-size:14px;font-weight:600;color:var(--dark-blue-600);text-decoration:none;display:flex;align-items:center;gap:4px">
+        <a href="${summary.repoUrl}" target="_blank" style="font-size:14px;font-weight:600;color:var(--primary);text-decoration:none;display:flex;align-items:center;gap:4px">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           ${summary.fullName}
         </a>
@@ -197,7 +197,7 @@ async function loadTeacherGitHubData(data) {
     `;
     loadTeacherCommits(data.id);
   } catch {
-    content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--gray-400);font-size:12px">Failed to load repo data.</div>';
+    content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">Failed to load repo data.</div>';
   }
 }
 
@@ -208,15 +208,15 @@ async function loadTeacherCommits(projectId) {
     if (!area) return;
     if (!commits.length) { area.innerHTML = ''; return; }
 
-    area.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--dark-blue-700);margin-bottom:6px">Recent Commits & Feedback</div>' +
+    area.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px">Recent Commits & Feedback</div>' +
       '<div style="max-height:300px;overflow-y:auto">' +
       commits.map(c => {
-        return '<div style="padding:7px 0;border-bottom:1px solid var(--gray-100);font-size:13px">' +
+        return '<div style="padding:7px 0;border-bottom:1px solid var(--border-light);font-size:13px">' +
           '<div style="display:flex;align-items:flex-start;gap:5px">' +
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--gray-400)" stroke-width="2" style="margin-top:3px;flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
+            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="margin-top:3px;flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
             '<div style="flex:1">' +
-              '<a href="' + c.url + '" target="_blank" style="color:var(--dark-blue-700);text-decoration:none;font-weight:500">' + c.message.split('\n')[0] + '</a>' +
-              '<div style="font-size:11px;color:var(--gray-400);margin-top:1px">' +
+              '<a href="' + c.url + '" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:500">' + c.message.split('\n')[0] + '</a>' +
+              '<div style="font-size:11px;color:var(--text-muted);margin-top:1px">' +
                 '<span>' + c.author + '</span> <span>&middot;</span> <span>' + timeAgo(c.date) + '</span> <span>&middot;</span> <span style="font-family:monospace">' + c.sha.slice(0,7) + '</span>' +
                 '<button class="btn btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px" onclick="toggleCommitComment(\'' + c.sha + '\')">Comment</button>' +
               '</div>' +
@@ -243,13 +243,13 @@ async function loadCommitComments(sha, projectId) {
     const container = document.getElementById('commitComments_' + sha);
     if (!container || !comments.length) return;
     container.innerHTML = comments.map(c => `
-      <div style="padding:6px 8px;margin-top:4px;background:var(--gray-50);border-radius:4px;font-size:12px">
+      <div style="padding:6px 8px;margin-top:4px;background:var(--primary-lighter);border-radius:4px;font-size:12px">
         <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
           ${c.authorAvatar ? '<img src="' + c.authorAvatar + '" style="width:16px;height:16px;border-radius:50%">' : ''}
-          <strong style="font-size:11px;color:var(--dark-blue-700)">${c.author}</strong>
-          <span style="font-size:10px;color:var(--gray-400)">${timeAgo(c.createdAt)}</span>
+          <strong style="font-size:11px;color:var(--primary)">${c.author}</strong>
+          <span style="font-size:10px;color:var(--text-muted)">${timeAgo(c.createdAt)}</span>
         </div>
-        <div style="color:var(--gray-600)">${c.body.replace(/\n— Comment from KV PTA Management$/, '')}</div>
+        <div style="color:var(--text-secondary)">${c.body.replace(/\n— Comment from KV PTA Management$/, '')}</div>
       </div>
     `).join('');
   } catch {}

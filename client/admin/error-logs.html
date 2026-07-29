@@ -13,8 +13,8 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
     <div class="card" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">System Error Logs</div>
-      <div class="table-container"><table><thead><tr><th>Level</th><th>Message</th><th>Route</th><th>Time</th></tr></thead><tbody id="logsList"></tbody></table></div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">System Error Logs</div>
+      <div class="table-wrapper"><table><thead><tr><th>Level</th><th>Message</th><th>Route</th><th>Time</th></tr></thead><tbody id="logsList"></tbody></table></div>
     </div>
   </div>
 </div>
@@ -37,8 +37,8 @@ async function load() {
       <tr>
         <td><span class="badge ${l.level === 'error' ? 'badge-red' : l.level === 'warn' ? 'badge-yellow' : 'badge-blue'}">${l.level}</span></td>
         <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${l.message}</td>
-        <td style="color:var(--gray-400);font-size:13px">${l.route || '-'}</td>
-        <td style="color:var(--gray-400);font-size:13px">${new Date(l.created_at).toLocaleString()}</td>
+        <td style="color:var(--text-muted);font-size:13px">${l.route || '-'}</td>
+        <td style="color:var(--text-muted);font-size:13px">${new Date(l.created_at).toLocaleString()}</td>
       </tr>
     `).join('');
   }

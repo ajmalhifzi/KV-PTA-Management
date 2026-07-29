@@ -14,14 +14,14 @@
   <div class="content-area">
 
     <div class="card" style="padding:0;margin-bottom:16px">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Upload File for Group</div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">Upload File for Group</div>
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
           <select class="form-input" id="groupSelect" style="flex:1;min-width:200px">
             <option value="">— Select Group —</option>
           </select>
           <input class="form-input" id="fileName" placeholder="File name" style="flex:1;min-width:160px">
-          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:280px;padding:6px 12px;border:1px solid var(--gray-300);border-radius:6px;font-size:14px">
+          <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:280px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px">
           <select class="form-input" id="fileCategory" style="width:160px">
             <option value="supplementary">Supplementary</option>
             <option value="formal">Formal Document</option>
@@ -33,7 +33,7 @@
     </div>
 
     <div class="card" style="padding:0">
-      <div style="padding:16px 20px;border-bottom:1px solid var(--gray-200);font-weight:600;font-size:14px;color:var(--dark-blue-800)">Student Uploads</div>
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">Student Uploads</div>
       <div id="uploadsContainer" style="padding:16px 20px"></div>
     </div>
 
@@ -66,15 +66,15 @@ function renderCard(u) {
   const timeStr = d.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
   const badgeClass = u.category === 'formal' ? 'badge-blue' : 'badge-gray';
   return `
-    <div style="border:1.5px solid var(--gray-200);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px">
-      <div style="width:34px;height:34px;border-radius:6px;background:var(--soft-blue-100);display:flex;align-items:center;justify-content:center;flex-shrink:0">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--dark-blue-600)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    <div style="border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px">
+      <div style="width:34px;height:34px;border-radius:6px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
       </div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:13px;color:var(--dark-blue-800);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+        <div style="font-weight:600;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
           <a href="/api/files/uploads/${u.id}" target="_blank" style="color:inherit;text-decoration:none">${u.file_name}</a>
         </div>
-        <div style="font-size:11px;color:var(--gray-500);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
           <span>${u.uploader_name || u.student_name || 'Unknown'}</span>
           <span>·</span>
           <span style="font-weight:500">${u.group_name || 'No Group'}</span>
@@ -95,7 +95,7 @@ async function load() {
   const container = document.getElementById('uploadsContainer');
 
   if (uploads.length === 0) {
-    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--gray-400);font-size:13px">No uploads from your students</div>';
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--text-muted);font-size:13px">No uploads from your students</div>';
     return;
   }
 
@@ -113,7 +113,7 @@ async function load() {
   container.innerHTML = Object.keys(groups).sort((a, b) => b.localeCompare(a)).map(key => {
     const label = labels[key] || new Date(key + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
     return `
-      <div style="font-weight:700;font-size:11px;color:var(--gray-500);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
+      <div style="font-weight:700;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
       ${groups[key].map(renderCard).join('')}
     `;
   }).join('');

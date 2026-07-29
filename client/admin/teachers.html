@@ -35,7 +35,7 @@ async function load() {
   const container = document.getElementById('teachersContainer');
 
   if (teachers.length === 0) {
-    container.innerHTML = '<div class="card" style="text-align:center;padding:48px"><p style="color:var(--gray-500)">No teachers registered</p></div>';
+    container.innerHTML = '<div class="card" style="text-align:center;padding:48px"><p style="color:var(--text-secondary)">No teachers registered</p></div>';
     return;
   }
 
@@ -43,29 +43,29 @@ async function load() {
     const tg = teacherGroups[t.id];
     return `
       <div class="card" style="padding:0;margin-bottom:16px">
-        <div style="padding:14px 20px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center;background:var(--soft-blue-50)">
+        <div style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--primary-lighter)">
           <div>
-            <span style="font-weight:700;font-size:15px;color:var(--dark-blue-800)">${t.full_name}</span>
-            <span style="font-size:13px;color:var(--gray-500);margin-left:10px">${t.email}</span>
+            <span style="font-weight:700;font-size:15px;color:var(--text-primary)">${t.full_name}</span>
+            <span style="font-size:13px;color:var(--text-secondary);margin-left:10px">${t.email}</span>
           </div>
           <span class="badge badge-blue">${tg ? tg.groups.reduce((sum, g) => sum + g.students.length, 0) : 0} students</span>
         </div>
         ${tg
           ? tg.groups.map(g => `
-            <div style="border-bottom:1px solid var(--gray-100)">
-              <div style="padding:10px 20px;font-size:13px;font-weight:600;color:var(--dark-blue-600);background:var(--gray-50)">${g.group_name}</div>
+            <div style="border-bottom:1px solid var(--border-light)">
+              <div style="padding:10px 20px;font-size:13px;font-weight:600;color:var(--primary);background:var(--primary-lighter)">${g.group_name}</div>
               ${g.students.length === 0
-                ? '<div style="padding:10px 20px;font-size:13px;color:var(--gray-400)">No students</div>'
+                ? '<div style="padding:10px 20px;font-size:13px;color:var(--text-muted)">No students</div>'
                 : g.students.map(s => `
-                  <div style="padding:8px 20px 8px 36px;font-size:14px;border-top:1px solid var(--gray-50);display:flex;justify-content:space-between">
+                  <div style="padding:8px 20px 8px 36px;font-size:14px;border-top:1px solid var(--primary-lighter);display:flex;justify-content:space-between">
                     <span>${s.full_name}</span>
-                    <span style="color:var(--gray-400);font-size:13px">${s.email}</span>
+                    <span style="color:var(--text-muted);font-size:13px">${s.email}</span>
                   </div>
                 `).join('')
               }
             </div>
           `).join('')
-          : '<div style="padding:14px 20px;font-size:13px;color:var(--gray-400)">No groups assigned</div>'
+          : '<div style="padding:14px 20px;font-size:13px;color:var(--text-muted)">No groups assigned</div>'
         }
       </div>
     `;
