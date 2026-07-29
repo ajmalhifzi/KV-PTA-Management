@@ -58,10 +58,14 @@
             <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Photo Slider</div>
             <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
           </div>
-          <div class="card" style="padding:16px;min-height:100px">
+          <div class="card" style="padding:16px">
             <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Comment & Chat</div>
-            <div id="chatPlaceholder" style="font-size:13px;color:var(--text-muted)">
-              <p>No feedback yet. Comments will appear here once your teacher reviews your commits.</p>
+            <div id="chatList" style="font-size:13px;color:var(--text-muted);max-height:300px;overflow-y:auto;margin-bottom:10px">
+              <p>No messages yet.</p>
+            </div>
+            <div style="display:flex;gap:6px">
+              <input class="form-input" id="chatInput" placeholder="Type a message..." style="flex:1;font-size:12px">
+              <button class="btn btn-primary btn-sm" onclick="addChatComment()" style="font-size:12px;white-space:nowrap">Send</button>
             </div>
           </div>
         </div>
@@ -130,6 +134,7 @@ async function load() {
 
     renderProjectInfo(data);
     renderGitHub(data);
+    loadComments();
 
     const hash = window.location.hash.replace('#project-', '');
     if (hash && hash === data.project_id) {
@@ -364,22 +369,6 @@ async function loadStudentCommits() {
         '</div>';
       }).join('') +
       '</div>';
-
-    const chatEl = document.getElementById('chatPlaceholder');
-    if (chatEl) {
-      const allComments = commits.flatMap(c => (c.comments || []).map(cmt => ({ ...cmt, sha: c.sha, message: c.message })));
-      if (allComments.length) {
-        chatEl.innerHTML = allComments.map(cmt =>
-          '<div style="padding:8px 10px;margin-bottom:6px;background:var(--primary-lighter);border-radius:6px;font-size:13px">' +
-            '<div style="display:flex;justify-content:space-between;align-items:center">' +
-              '<strong style="color:var(--primary)">' + cmt.author + '</strong>' +
-              '<a href="#commit-' + cmt.sha + '" style="font-size:11px;color:var(--text-muted);text-decoration:none">' + (cmt.message || '').split('\n')[0].slice(0,30) + '</a>' +
-            '</div>' +
-            '<div style="color:var(--text-secondary);margin-top:2px">' + cmt.body + '</div>' +
-          '</div>'
-        ).join('');
-      }
-    }
   } catch {}
 }
 
@@ -431,6 +420,39 @@ async function unlinkRepo() {
   } catch (e) { alert(e.message); }
 }
 
+/* Comment & Chat */
+
+async function loadComments() {
+  try {
+    const comments = await get('/api/student/comments');
+    const list = document.getElementById('chatList');
+    if (!comments.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No messages yet.</p>';
+    } else {
+      list.innerHTML = comments.map(c =>
+        '<div style="padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:6px;font-size:13px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">' +
+            '<strong style="color:var(--primary);font-size:12px">' + c.author_name + '</strong>' +
+            '<span style="font-size:10px;color:var(--text-muted)">' + new Date(c.created_at).toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="color:var(--text-secondary)">' + escapeHtml(c.content) + '</div>' +
+        '</div>'
+      ).join('');
+      list.scrollTop = list.scrollHeight;
+    }
+  } catch { list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Could not load messages.</p>'; }
+}
+
+async function addChatComment() {
+  const input = document.getElementById('chatInput');
+  if (!input.value.trim()) return;
+  try {
+    await post('/api/student/comments', { content: input.value });
+    input.value = '';
+    loadComments();
+  } catch (e) { alert(e.message); }
+}
+
 /* Init */
 const urlParams = new URLSearchParams(window.location.search);
 if (urlParams.get('github') === 'connected') {
@@ -439,6 +461,7 @@ if (urlParams.get('github') === 'connected') {
 }
 
 load();
+setInterval(loadComments, 5000);
 </script>
 </body>
 </html>
