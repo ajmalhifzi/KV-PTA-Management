@@ -17,15 +17,15 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
 
-    <div id="noProject" style="display:none">
-      <div class="card" style="max-width:600px;text-align:center;padding:48px">
-        <p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>
-        <button class="btn btn-primary" onclick="window.location.href='/teacher/dashboard.html'">Go to Dashboard</button>
-      </div>
-    </div>
+    <div id="noProject" style="display:none"></div>
 
     <div id="projectView" style="display:none">
+      <div style="margin-bottom:12px">
+        <a href="#" onclick="backToProjectList();return false" style="font-size:13px;color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Projects
+        </a>
+      </div>
       <div id="projectInfo" class="card" style="margin-bottom:16px">
         <div id="projectInfoHeader"></div>
         <div id="projectInfoBody" style="margin-top:16px"></div>
@@ -96,8 +96,33 @@ function getSelectedProjectId() {
 async function load() {
   const projectId = getSelectedProjectId();
   if (!projectId) {
-    document.getElementById('noProject').style.display = 'block';
     document.getElementById('projectView').style.display = 'none';
+    const container = document.getElementById('noProject');
+    container.style.display = 'block';
+    try {
+      const projects = await get('/api/teacher/projects');
+      if (!projects.length) {
+        container.innerHTML = '<div class="card" style="max-width:600px;text-align:center;padding:48px;margin:0 auto">' +
+          '<p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>' +
+          '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>' +
+          '<button class="btn btn-primary" onclick="window.location.href=\'/teacher/dashboard.html\'">Go to Dashboard</button></div>';
+      } else {
+        container.innerHTML = '<div style="max-width:700px;margin:0 auto">' +
+          '<h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">All Projects</h3>' +
+          projects.map(p => {
+            const badgeClass = p.status === 'approved' ? 'badge-green' : p.status === 'rejected' ? 'badge-red' : p.status === 'submitted' ? 'badge-yellow' : 'badge-gray';
+            return '<div class="card" style="cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" onclick="selectProject(\'' + p.id + '\')">' +
+              '<div><div style="font-size:15px;font-weight:600;color:var(--text-primary)">' + escapeHtml(p.title || '(Untitled)') + '</div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">' + escapeHtml(p.group_name) + '</div></div>' +
+              '<span class="badge ' + badgeClass + '" style="font-size:11px">' + p.status + '</span></div>';
+          }).join('') + '</div>';
+      }
+    } catch {
+      container.innerHTML = '<div class="card" style="max-width:600px;text-align:center;padding:48px;margin:0 auto">' +
+        '<p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>' +
+        '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>' +
+        '<button class="btn btn-primary" onclick="window.location.href=\'/teacher/dashboard.html\'">Go to Dashboard</button></div>';
+    }
     return;
   }
 
@@ -168,6 +193,18 @@ async function updateStatus(status) {
     await patch(`/api/teacher/projects/${currentProjectId}/status`, { status });
     load();
   } catch (e) { alert(e.message); }
+}
+
+function selectProject(id) {
+  localStorage.setItem('viewProjectId', id);
+  window.location.hash = '#project-' + id;
+  load();
+}
+
+function backToProjectList() {
+  localStorage.removeItem('viewProjectId');
+  window.location.hash = '';
+  load();
 }
 
 /* GitHub */
