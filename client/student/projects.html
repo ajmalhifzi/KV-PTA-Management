@@ -115,7 +115,7 @@ async function load() {
     if (!data.project_id) {
       document.getElementById('noProject').style.display = 'block';
       document.getElementById('projectView').style.display = 'none';
-      if (window.location.hash) {
+      if (window.location.hash && typeof loadNavProjects === 'function') {
         loadNavProjects();
       }
       return;
@@ -132,7 +132,7 @@ async function load() {
       window.location.hash = '';
     }
 
-    loadNavProjects();
+    if (typeof loadNavProjects === 'function') loadNavProjects();
   } catch {
     document.getElementById('noProject').style.display = 'block';
     document.getElementById('projectView').style.display = 'none';
@@ -369,7 +369,7 @@ function connectGitHub() {
 }
 
 function showLinkRepoModal() {
-  document.getElementById('linkRepoModal').style.display = 'flex';
+  document.getElementById('linkRepoModal').classList.add('open');
   const repoList = document.getElementById('repoList');
   repoList.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">Loading repositories...</div>';
   get('/api/github/user-repos').then(repos => {
@@ -392,7 +392,7 @@ function showLinkRepoModal() {
 }
 
 function closeLinkRepoModal() {
-  document.getElementById('linkRepoModal').style.display = 'none';
+  document.getElementById('linkRepoModal').classList.remove('open');
 }
 
 async function linkRepo(repoFullName) {
