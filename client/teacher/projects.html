@@ -40,9 +40,15 @@
             <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Photo Slider</div>
             <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
           </div>
-          <div class="card" style="padding:24px;text-align:center">
-            <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Comment & Chat</div>
-            <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
+          <div class="card" style="padding:16px">
+            <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Comment & Chat</div>
+            <div id="teacherChatList" style="font-size:13px;color:var(--text-muted);max-height:300px;overflow-y:auto;margin-bottom:10px">
+              <p>No messages yet.</p>
+            </div>
+            <div style="display:flex;gap:6px">
+              <input class="form-input" id="teacherChatInput" placeholder="Type a message..." style="flex:1;font-size:12px">
+              <button class="btn btn-primary btn-sm" onclick="addTeacherChatComment()" style="font-size:12px;white-space:nowrap">Send</button>
+            </div>
           </div>
         </div>
       </div>
@@ -102,6 +108,7 @@ async function load() {
     document.getElementById('projectView').style.display = 'block';
     renderProjectInfo(project);
     renderGitHub(project);
+    loadTeacherComments();
   } catch {
     document.getElementById('noProject').style.display = 'block';
     document.getElementById('projectView').style.display = 'none';
@@ -272,9 +279,46 @@ async function addCommitComment(sha) {
   } catch (e) { alert(e.message); }
 }
 
+/* Comment & Chat */
+
+async function loadTeacherComments() {
+  if (!currentProjectId) return;
+  try {
+    const comments = await get('/api/teacher/projects/' + currentProjectId + '/comments');
+    const list = document.getElementById('teacherChatList');
+    if (!list) return;
+    if (!comments.length) {
+      list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No messages yet.</p>';
+    } else {
+      list.innerHTML = comments.map(c =>
+        '<div style="padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:6px;font-size:13px">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">' +
+            '<strong style="color:var(--primary);font-size:12px">' + c.author_name + '</strong>' +
+            '<span style="font-size:10px;color:var(--text-muted)">' + new Date(c.created_at).toLocaleString() + '</span>' +
+          '</div>' +
+          '<div style="color:var(--text-secondary)">' + escapeHtml(c.content) + '</div>' +
+        '</div>'
+      ).join('');
+      list.scrollTop = list.scrollHeight;
+    }
+  } catch {}
+}
+
+async function addTeacherChatComment() {
+  if (!currentProjectId) return;
+  const input = document.getElementById('teacherChatInput');
+  if (!input.value.trim()) return;
+  try {
+    await post('/api/teacher/projects/' + currentProjectId + '/comments', { content: input.value });
+    input.value = '';
+    loadTeacherComments();
+  } catch (e) { alert(e.message); }
+}
+
 /* Init */
 window.addEventListener('hashchange', load);
 load();
+setInterval(loadTeacherComments, 5000);
 </script>
 </body>
 </html>
