@@ -96,6 +96,25 @@ router.post('/projects/:projectId/submit', async (req, res) => {
   res.json(rows[0]);
 });
 
+router.post('/projects', async (req, res) => {
+  const { title, objective, purpose, scope } = req.body;
+  if (!title || !title.trim())
+    return res.status(400).json({ error: 'Project title is required' });
+
+  const assignment = await pool.query(`
+    SELECT g.id AS group_id, g.teacher_id FROM teacher_student_assignments tsa
+    JOIN groups g ON g.id = tsa.group_id
+    WHERE tsa.student_id = $1
+  `, [req.user.id]);
+  if (!assignment.rows.length) return res.status(404).json({ error: 'No group assigned' });
+
+  const { rows } = await pool.query(
+    'INSERT INTO projects (group_id, title, objective, purpose, scope, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+    [assignment.rows[0].group_id, title.trim(), (objective || '').trim(), (purpose || '').trim(), (scope || '').trim(), 'draft']
+  );
+  res.status(201).json(rows[0]);
+});
+
 router.get('/group', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT g.*, u.full_name AS teacher_name, u.email AS teacher_email,
@@ -131,7 +150,7 @@ router.put('/group', async (req, res) => {
 
   if (title || objective || purpose || scope) {
     const project = await pool.query(
-      'SELECT id FROM projects WHERE group_id = $1',
+      'SELECT id FROM projects WHERE group_id = $1 ORDER BY updated_at DESC LIMIT 1',
       [groupId]
     );
     if (project.rows.length) {
@@ -141,9 +160,9 @@ router.put('/group', async (req, res) => {
       if (purpose) { fields.push(`purpose = $${idx++}`); vals.push(purpose); }
       if (scope) { fields.push(`scope = $${idx++}`); vals.push(scope); }
       fields.push(`updated_at = NOW()`);
-      vals.push(groupId);
+      vals.push(project.rows[0].id);
       await pool.query(
-        `UPDATE projects SET ${fields.join(', ')} WHERE group_id = $${idx}`,
+        `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx}`,
         vals
       );
     } else if (title) {
@@ -160,6 +179,8 @@ router.put('/group', async (req, res) => {
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id AND tsa.student_id = $1
     LEFT JOIN projects p ON p.group_id = g.id
     WHERE g.id = $2
+    ORDER BY p.updated_at DESC
+    LIMIT 1
   `, [req.user.id, groupId]);
   res.json(updated.rows[0] || { group_name });
 });
@@ -230,25 +251,29 @@ router.get('/comments', async (req, res) => {
     JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
     JOIN users u ON u.id = c.author_id
     WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR p.id = $2)
     ORDER BY c.created_at ASC
-  `, [req.user.id]);
+  `, [req.user.id, req.query.project || null]);
   res.json(rows);
 });
 
 router.post('/comments', async (req, res) => {
-  const { content } = req.body;
+  const { content, project } = req.body;
   if (!content) return res.status(400).json({ error: 'Content required' });
 
-  const project = await pool.query(`
+  const projectQuery = await pool.query(`
     SELECT p.id FROM projects p
     JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
     WHERE tsa.student_id = $1
-  `, [req.user.id]);
-  if (!project.rows.length) return res.status(404).json({ error: 'No project found' });
+      AND ($2::uuid IS NULL OR p.id = $2)
+    ORDER BY p.updated_at DESC
+    LIMIT 1
+  `, [req.user.id, project || null]);
+  if (!projectQuery.rows.length) return res.status(404).json({ error: 'No project found' });
 
   const { rows } = await pool.query(
     'INSERT INTO comments (project_id, author_id, content) VALUES ($1, $2, $3) RETURNING *',
-    [project.rows[0].id, req.user.id, content]
+    [projectQuery.rows[0].id, req.user.id, content]
   );
 
   const { rows: commentTeachers } = await pool.query(

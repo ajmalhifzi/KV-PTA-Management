@@ -11,6 +11,7 @@
   .field-label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px }
   .msg-success { font-size:13px;color:#2b8a3e;margin-bottom:8px }
   .msg-error { font-size:13px;color:#c92a2a;margin-bottom:8px }
+  .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px }
 </style>
 </head>
 <body>
@@ -19,36 +20,29 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
 
-    <div id="noProject" style="display:none">
-      <div class="card" style="max-width:600px;text-align:center;padding:48px">
-        <p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Project Yet</p>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Submit your FYP idea to get started.</p>
-        <button class="btn btn-primary" onclick="showNewForm()">Create Project</button>
+    <div id="projectList" style="max-width:700px;margin:0 auto">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <h3 style="font-size:16px;font-weight:700;color:var(--text-primary)">My Projects</h3>
+        <button class="btn btn-primary" onclick="openCreateModal()">Create New Project</button>
       </div>
-      <div id="newProjectForm" style="display:none;max-width:600px">
-        <div class="card">
-          <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">Create Project</h3>
-          <div class="form-group"><label class="field-label">Group Name</label><input class="form-input" id="newGroupName"></div>
-          <div class="form-group"><label class="field-label">Project Title</label><input class="form-input" id="newTitle"></div>
-          <div class="form-group"><label class="field-label">Objective</label><textarea class="form-input" id="newObjective" rows="2"></textarea></div>
-          <div class="form-group"><label class="field-label">Purpose</label><textarea class="form-input" id="newPurpose" rows="2"></textarea></div>
-          <div class="form-group"><label class="field-label">Scope</label><textarea class="form-input" id="newScope" rows="2"></textarea></div>
-          <div id="newProjectMsg" style="font-size:13px;margin-bottom:12px;display:none"></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="saveNewProject()">Save</button>
-            <button class="btn btn-secondary" onclick="location.reload()">Cancel</button>
-          </div>
-        </div>
-      </div>
+      <div id="projectListContainer"></div>
     </div>
 
-    <div id="projectList" style="display:none">
-      <div style="max-width:700px;margin:0 auto">
-        <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">My Projects</h3>
-        <div id="projectListContainer"></div>
-      </div>
-    </div>
+  </div>
+</div>
 
+<div id="createModal" class="modal-overlay" style="display:none">
+  <div class="card" style="max-width:520px;width:100%">
+    <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">Create New Project</h3>
+    <div class="form-group"><label class="field-label">Project Title *</label><input class="form-input" id="newTitle" placeholder="e.g. Smart Waste Sorter"></div>
+    <div class="form-group"><label class="field-label">Objective</label><textarea class="form-input" id="newObjective" rows="2"></textarea></div>
+    <div class="form-group"><label class="field-label">Purpose</label><textarea class="form-input" id="newPurpose" rows="2"></textarea></div>
+    <div class="form-group"><label class="field-label">Scope</label><textarea class="form-input" id="newScope" rows="2"></textarea></div>
+    <div id="createMsg" style="font-size:13px;margin-bottom:12px;display:none"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveNewProject()">Create</button>
+    </div>
   </div>
 </div>
 
@@ -68,23 +62,24 @@ function escapeHtml(s) {
 async function load() {
   try {
     const projects = await get('/api/student/projects');
+    const container = document.getElementById('projectListContainer');
     if (!projects.length) {
-      document.getElementById('projectList').style.display = 'none';
-      document.getElementById('noProject').style.display = 'block';
+      container.innerHTML = '<div class="card" style="text-align:center;padding:48px">' +
+        '<p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>' +
+        '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Create your first FYP project to get started.</p>' +
+        '<button class="btn btn-primary" onclick="openCreateModal()">Create New Project</button></div>';
       return;
     }
-    document.getElementById('noProject').style.display = 'none';
-    document.getElementById('projectList').style.display = 'block';
-    document.getElementById('projectListContainer').innerHTML = projects.map(p => {
+    container.innerHTML = projects.map(p => {
       const badgeClass = p.status === 'approved' ? 'badge-green' : p.status === 'rejected' ? 'badge-red' : p.status === 'submitted' ? 'badge-yellow' : 'badge-gray';
       return '<div class="card" style="cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" onclick="openProject(\'' + p.id + '\')">' +
         '<div><div style="font-size:15px;font-weight:600;color:var(--text-primary)">' + escapeHtml(p.title || '(Untitled)') + '</div>' +
         '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">' + escapeHtml(p.group_name) + '</div></div>' +
         '<span class="badge ' + badgeClass + '" style="font-size:11px">' + p.status + '</span></div>';
     }).join('');
-  } catch {
-    document.getElementById('projectList').style.display = 'none';
-    document.getElementById('noProject').style.display = 'block';
+  } catch (e) {
+    document.getElementById('projectListContainer').innerHTML =
+      '<div class="card" style="text-align:center;padding:32px"><p style="font-size:13px;color:#c92a2a">' + escapeHtml(e.message || 'Failed to load projects') + '</p></div>';
   }
 }
 
@@ -92,23 +87,39 @@ function openProject(id) {
   window.location.href = '/student/project.html?project=' + id;
 }
 
-function showNewForm() {
-  document.getElementById('noProject').querySelector('.card').style.display = 'none';
-  document.getElementById('newProjectForm').style.display = 'block';
+function openCreateModal() {
+  document.getElementById('newTitle').value = '';
+  document.getElementById('newObjective').value = '';
+  document.getElementById('newPurpose').value = '';
+  document.getElementById('newScope').value = '';
+  const msg = document.getElementById('createMsg');
+  msg.style.display = 'none';
+  document.getElementById('createModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('newTitle').focus(), 50);
+}
+
+function closeCreateModal() {
+  document.getElementById('createModal').style.display = 'none';
 }
 
 async function saveNewProject() {
-  const msg = document.getElementById('newProjectMsg');
+  const msg = document.getElementById('createMsg');
   msg.style.display = 'none';
+  const title = document.getElementById('newTitle').value.trim();
+  if (!title) {
+    msg.className = 'msg-error';
+    msg.textContent = 'Project title is required';
+    msg.style.display = 'block';
+    return;
+  }
   try {
-    await put('/api/student/group', {
-      group_name: document.getElementById('newGroupName').value.trim(),
-      title: document.getElementById('newTitle').value.trim(),
+    const project = await post('/api/student/projects', {
+      title: title,
       objective: document.getElementById('newObjective').value.trim(),
       purpose: document.getElementById('newPurpose').value.trim(),
       scope: document.getElementById('newScope').value.trim()
     });
-    location.reload();
+    window.location.href = '/student/project.html?project=' + project.id;
   } catch (e) {
     msg.className = 'msg-error';
     msg.textContent = e.message;

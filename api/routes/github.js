@@ -93,7 +93,7 @@ router.get('/status', async (req, res) => {
 });
 
 router.post('/link-repo', authorize('student'), async (req, res) => {
-  const { repoFullName } = req.body;
+  const { repoFullName, project } = req.body;
   if (!repoFullName) return res.status(400).json({ error: 'repoFullName required' });
 
   const { rows: projects } = await pool.query(`
@@ -101,8 +101,10 @@ router.post('/link-repo', authorize('student'), async (req, res) => {
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
     WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR p.id = $2)
+    ORDER BY p.updated_at DESC
     LIMIT 1
-  `, [req.user.id]);
+  `, [req.user.id, project || null]);
 
   if (!projects.length) return res.status(404).json({ error: 'No project found' });
 
@@ -129,13 +131,16 @@ router.post('/link-repo', authorize('student'), async (req, res) => {
 });
 
 router.post('/unlink-repo', authorize('student'), async (req, res) => {
+  const { project } = req.body;
   const { rows: projects } = await pool.query(`
     SELECT p.id FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
     WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR p.id = $2)
+    ORDER BY p.updated_at DESC
     LIMIT 1
-  `, [req.user.id]);
+  `, [req.user.id, project || null]);
 
   if (!projects.length) return res.status(404).json({ error: 'No project found' });
 
@@ -512,12 +517,14 @@ router.get('/my-commits', authorize('student'), async (req, res) => {
   const { limit = 20 } = req.query;
 
   const { rows: projects } = await pool.query(`
-    SELECT p.github_repo_url FROM projects p
+    SELECT p.id, p.github_repo_url FROM projects p
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
     WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR p.id = $2)
+    ORDER BY p.updated_at DESC
     LIMIT 1
-  `, [req.user.id]);
+  `, [req.user.id, req.query.project || null]);
 
   if (!projects.length || !projects[0].github_repo_url) return res.json([]);
 
@@ -578,8 +585,10 @@ router.get('/my-repo-summary', authorize('student'), async (req, res) => {
     JOIN groups g ON g.id = p.group_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = g.id
     WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR p.id = $2)
+    ORDER BY p.updated_at DESC
     LIMIT 1
-  `, [req.user.id]);
+  `, [req.user.id, req.query.project || null]);
 
   if (!projects.length || !projects[0].github_repo_url) return res.json({ linked: false });
   const repoUrl = projects[0].github_repo_url;

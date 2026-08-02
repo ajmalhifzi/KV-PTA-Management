@@ -32,7 +32,7 @@ CREATE TABLE teacher_student_assignments (
 -- 4. Projects (student FYP, linked via student or group)
 CREATE TABLE projects (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  group_id UUID UNIQUE NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  group_id UUID NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
   title VARCHAR(255) NOT NULL DEFAULT '',
   objective TEXT NOT NULL DEFAULT '',
   purpose TEXT NOT NULL DEFAULT '',
