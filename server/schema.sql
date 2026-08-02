@@ -77,7 +77,19 @@ CREATE TABLE project_uploads (
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 8. Error logs (admin-only monitoring)
+-- 8. Project photos (student gallery for the photo slider)
+CREATE TABLE project_photos (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  uploader_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  caption TEXT,
+  file_data TEXT NOT NULL,
+  file_type VARCHAR(100),
+  uploaded_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX idx_project_photos_project_id ON project_photos(project_id);
+
+-- 9. Error logs (admin-only monitoring)
 CREATE TABLE error_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   level VARCHAR(20) NOT NULL DEFAULT 'error',
@@ -87,7 +99,7 @@ CREATE TABLE error_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 9. Meeting logs (teacher supervision meeting records)
+-- 10. Meeting logs (teacher supervision meeting records)
 CREATE TABLE meeting_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
@@ -101,7 +113,7 @@ CREATE TABLE meeting_logs (
 );
 CREATE INDEX idx_meeting_logs_project_id ON meeting_logs(project_id);
 
--- 10. Notifications (bell icon dropdown for all roles)
+-- 11. Notifications (bell icon dropdown for all roles)
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -115,7 +127,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications(user_id, is_read);
 
--- 11. Old FYP data (seeded mock data for AI idea recommendations)
+-- 12. Old FYP data (seeded mock data for AI idea recommendations)
 CREATE TABLE old_fyp_data (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   title VARCHAR(255) NOT NULL,
@@ -127,7 +139,7 @@ CREATE TABLE old_fyp_data (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- 12. GitHub OAuth connections
+-- 13. GitHub OAuth connections
 CREATE TABLE github_connections (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,

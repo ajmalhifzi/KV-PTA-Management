@@ -43,6 +43,24 @@ app.get('/api/files/uploads/:id', async (req, res) => {
   }
 });
 
+app.get('/api/files/photos/:id', async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT file_data, file_type FROM project_photos WHERE id = $1',
+      [req.params.id]
+    );
+    if (!rows.length) return res.status(404).json({ error: 'Photo not found' });
+    const { file_data, file_type } = rows[0];
+    if (!file_data) return res.status(404).json({ error: 'Photo data not available' });
+    const buf = Buffer.from(file_data, 'base64');
+    res.set('Cache-Control', 'private, max-age=3600');
+    res.set('Content-Type', file_type || 'image/jpeg');
+    res.send(buf);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to serve photo' });
+  }
+});
+
 app.get('/api/files/resources/:id', async (req, res) => {
   try {
     const { rows } = await pool.query(

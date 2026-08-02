@@ -22,6 +22,7 @@ function get(path) { return api(path); }
 function post(path, body) { return api(path, { method: 'POST', body: JSON.stringify(body) }); }
 function put(path, body) { return api(path, { method: 'PUT', body: JSON.stringify(body) }); }
 function patch(path, body) { return api(path, { method: 'PATCH', body: JSON.stringify(body) }); }
+function del(path) { return api(path, { method: 'DELETE' }); }
 
 let _supabaseConfig = null;
 async function getSupabaseConfig() {

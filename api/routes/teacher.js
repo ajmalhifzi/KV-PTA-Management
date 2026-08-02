@@ -135,6 +135,20 @@ router.post('/projects/:projectId/comments', async (req, res) => {
   res.status(201).json(rows[0]);
 });
 
+router.get('/projects/:projectId/photos', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT ph.id, ph.project_id, ph.uploader_id, ph.caption, ph.file_type, ph.uploaded_at,
+           u.full_name AS uploader_name
+    FROM project_photos ph
+    JOIN projects p ON p.id = ph.project_id
+    JOIN groups g ON g.id = p.group_id
+    JOIN users u ON u.id = ph.uploader_id
+    WHERE ph.project_id = $1 AND g.teacher_id = $2
+    ORDER BY ph.uploaded_at DESC
+  `, [req.params.projectId, req.user.id]);
+  res.json(rows);
+});
+
 router.get('/uploads', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT pu.id, pu.project_id, pu.student_id, pu.teacher_id, pu.file_name, pu.file_type, pu.category, pu.uploaded_at,

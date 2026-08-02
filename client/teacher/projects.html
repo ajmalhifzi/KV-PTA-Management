@@ -37,9 +37,12 @@
           <div id="githubCardContent"></div>
         </div>
         <div>
-          <div class="card" style="margin-bottom:16px;padding:24px;text-align:center">
-            <div style="font-size:13px;font-weight:600;color:var(--text-muted);margin-bottom:4px">Photo Slider</div>
-            <p style="font-size:12px;color:var(--text-muted)">Coming soon</p>
+          <div class="card" style="margin-bottom:16px;padding:16px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div style="font-size:13px;font-weight:600;color:var(--text-muted)">Photo Slider</div>
+              <span id="photoCount" class="badge badge-gray" style="font-size:10px;display:none"></span>
+            </div>
+            <div id="photoSlider"></div>
           </div>
           <div class="card" style="padding:16px">
             <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Comment & Chat</div>
@@ -135,10 +138,94 @@ async function load() {
     renderProjectInfo(project);
     renderGitHub(project);
     loadTeacherComments();
+    loadPhotoSlider();
   } catch {
     document.getElementById('noProject').style.display = 'block';
     document.getElementById('projectView').style.display = 'none';
   }
+}
+
+/* Photo Slider */
+
+let photoIndex = 0;
+let photoTimer = null;
+let photos = [];
+
+function stopPhotoTimer() {
+  if (photoTimer) { clearInterval(photoTimer); photoTimer = null; }
+}
+
+function startPhotoTimer() {
+  stopPhotoTimer();
+  if (photos.length > 1) {
+    photoTimer = setInterval(() => {
+      photoIndex = (photoIndex + 1) % photos.length;
+      renderPhotoSlider();
+    }, 4000);
+  }
+}
+
+async function loadPhotoSlider() {
+  if (!currentProjectId) return;
+  try {
+    photos = await get('/api/teacher/projects/' + currentProjectId + '/photos');
+    photoIndex = 0;
+    renderPhotoSlider();
+    startPhotoTimer();
+  } catch {
+    document.getElementById('photoSlider').innerHTML =
+      '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Could not load photos.</p>';
+  }
+}
+
+function renderPhotoSlider() {
+  const container = document.getElementById('photoSlider');
+  if (!container) return;
+  const count = document.getElementById('photoCount');
+  if (count) {
+    count.textContent = photos.length ? photos.length + (photos.length > 1 ? ' photos' : ' photo') : '';
+    count.style.display = photos.length ? 'inline-block' : 'none';
+  }
+  if (!photos.length) {
+    container.innerHTML = '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px">No project photos yet.</p>';
+    return;
+  }
+  const photo = photos[Math.min(photoIndex, photos.length - 1)];
+  container.innerHTML = `
+    <div style="position:relative;border-radius:8px;overflow:hidden;background:var(--bg-card);border:1px solid var(--border-light)">
+      <div style="width:100%;height:190px;display:flex;align-items:center;justify-content:center;background:#f5f7fb;overflow:hidden">
+        <img src="/api/files/photos/${photo.id}" alt="${escapeHtml(photo.caption || 'project photo')}"
+             style="max-width:100%;max-height:190px;object-fit:contain" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:12px;color:var(--text-muted)&quot;>Photo unavailable</p>'">
+      </div>
+      ${photos.length > 1 ? `
+      <button onclick="prevPhoto()" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;color:var(--text-primary);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.15)">&lsaquo;</button>
+      <button onclick="nextPhoto()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;color:var(--text-primary);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.15)">&rsaquo;</button>` : ''}
+    </div>
+    <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);text-align:center;min-height:16px">${escapeHtml(photo.caption || '')}</div>
+    ${photos.length > 1 ? `
+    <div style="display:flex;justify-content:center;gap:6px;margin-top:8px">
+      ${photos.map((p, i) => '<button onclick="goToPhoto(' + i + ')" style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer;padding:0;background:' + (i === photoIndex ? 'var(--primary)' : 'var(--border)') + '"></button>').join('')}
+    </div>` : ''}
+    <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center">Uploaded by ${escapeHtml(photo.uploader_name || 'student')}</div>
+  `;
+}
+
+function prevPhoto() {
+  photoIndex = (photoIndex - 1 + photos.length) % photos.length;
+  renderPhotoSlider();
+  startPhotoTimer();
+}
+
+function nextPhoto() {
+  photoIndex = (photoIndex + 1) % photos.length;
+  renderPhotoSlider();
+  startPhotoTimer();
+}
+
+function goToPhoto(i) {
+  photoIndex = i;
+  renderPhotoSlider();
+  startPhotoTimer();
 }
 
 function renderProjectInfo(data) {

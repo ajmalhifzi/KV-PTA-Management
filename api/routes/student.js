@@ -379,6 +379,75 @@ router.get('/meetings', async (req, res) => {
   res.json(rows);
 });
 
+router.get('/project-photos', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT ph.id, ph.project_id, ph.uploader_id, ph.caption, ph.file_type, ph.uploaded_at,
+           u.full_name AS uploader_name
+    FROM project_photos ph
+    JOIN projects p ON p.id = ph.project_id
+    JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
+    JOIN users u ON u.id = ph.uploader_id
+    WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR ph.project_id = $2)
+    ORDER BY ph.uploaded_at DESC
+  `, [req.user.id, req.query.project || null]);
+  res.json(rows);
+});
+
+router.post('/project-photos', async (req, res) => {
+  const { project, caption, file_data, file_type } = req.body;
+  if (!file_data) return res.status(400).json({ error: 'file_data required' });
+  if (file_data.length > 14 * 1024 * 1024)
+    return res.status(400).json({ error: 'Photo too large. Max 10MB.' });
+
+  const projectRes = await pool.query(`
+    SELECT p.id FROM projects p
+    JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
+    WHERE tsa.student_id = $1
+      AND ($2::uuid IS NULL OR p.id = $2)
+    ORDER BY p.updated_at DESC
+    LIMIT 1
+  `, [req.user.id, project || null]);
+  if (!projectRes.rows.length) return res.status(404).json({ error: 'No project found' });
+
+  const { rows } = await pool.query(
+    'INSERT INTO project_photos (project_id, uploader_id, caption, file_data, file_type) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+    [projectRes.rows[0].id, req.user.id, (caption || '').trim(), file_data, file_type || 'image/jpeg']
+  );
+
+  const { rows: photoTeachers } = await pool.query(
+    `SELECT g.teacher_id FROM teacher_student_assignments tsa
+     JOIN groups g ON g.id = tsa.group_id WHERE tsa.student_id = $1`,
+    [req.user.id]
+  );
+  if (photoTeachers.length) {
+    await createNotification({
+      userId: photoTeachers[0].teacher_id,
+      type: 'upload',
+      title: 'New Project Photo',
+      message: 'Your student added a new project photo',
+      relatedUrl: '/teacher/dashboard.html'
+    });
+  }
+
+  res.status(201).json(rows[0]);
+});
+
+router.delete('/project-photos/:photoId', async (req, res) => {
+  const { photoId } = req.params;
+  const { rowCount } = await pool.query(`
+    DELETE FROM project_photos ph
+    USING teacher_student_assignments tsa, projects p
+    WHERE ph.id = $1
+      AND ph.uploader_id = $2
+      AND p.id = ph.project_id
+      AND tsa.group_id = p.group_id
+      AND tsa.student_id = $2
+  `, [photoId, req.user.id]);
+  if (!rowCount) return res.status(404).json({ error: 'Photo not found' });
+  res.json({ ok: true });
+});
+
 router.get('/teacher', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT u.id, u.email, u.full_name
