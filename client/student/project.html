@@ -306,6 +306,8 @@ async function uploadPhoto() {
       });
       input.value = '';
       await loadPhotoSlider();
+      photoIndex = photos.length - 1;
+      renderPhotoSlider();
     } catch (err) { alert(err.message); }
   };
   reader.readAsDataURL(file);

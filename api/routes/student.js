@@ -389,7 +389,7 @@ router.get('/project-photos', async (req, res) => {
     JOIN users u ON u.id = ph.uploader_id
     WHERE tsa.student_id = $1
       AND ($2::uuid IS NULL OR ph.project_id = $2)
-    ORDER BY ph.uploaded_at DESC
+    ORDER BY ph.uploaded_at ASC
   `, [req.user.id, req.query.project || null]);
   res.json(rows);
 });

@@ -144,7 +144,7 @@ router.get('/projects/:projectId/photos', async (req, res) => {
     JOIN groups g ON g.id = p.group_id
     JOIN users u ON u.id = ph.uploader_id
     WHERE ph.project_id = $1 AND g.teacher_id = $2
-    ORDER BY ph.uploaded_at DESC
+    ORDER BY ph.uploaded_at ASC
   `, [req.params.projectId, req.user.id]);
   res.json(rows);
 });
