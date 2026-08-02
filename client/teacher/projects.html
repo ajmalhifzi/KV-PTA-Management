@@ -9,6 +9,19 @@
 <style>
   .field-label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px }
   .field-value { font-size:14px;color:var(--text-primary);margin-bottom:12px }
+  .photo-lightbox { position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s }
+  .photo-lightbox.open { opacity:1;pointer-events:all }
+  .photo-lightbox img { max-width:min(92vw,1100px);max-height:80vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5) }
+  .photo-lightbox-stage { display:flex;flex-direction:column;align-items:center;gap:12px }
+  .photo-lightbox-caption { font-size:14px;color:#e9ecef;text-align:center;max-width:min(92vw,1100px) }
+  .photo-lightbox-counter { font-size:12px;color:#adb5bd }
+  .photo-lightbox-close { position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center }
+  .photo-lightbox-close:hover { background:rgba(255,255,255,.25) }
+  .photo-lightbox-nav { position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s }
+  .photo-lightbox-nav:hover { background:rgba(255,255,255,.25) }
+  .photo-lightbox-nav.prev { left:20px }
+  .photo-lightbox-nav.next { right:20px }
+  .photo-lightbox-nav.hidden { display:none }
 </style>
 </head>
 <body>
@@ -179,7 +192,7 @@ function renderPhotoSlider() {
     <div style="position:relative;border-radius:8px;overflow:hidden;background:var(--bg-card);border:1px solid var(--border-light)">
       <div style="width:100%;height:190px;display:flex;align-items:center;justify-content:center;background:#f5f7fb;overflow:hidden">
         <img src="/api/files/photos/${photo.id}" alt="${escapeHtml(photo.caption || 'project photo')}"
-             style="max-width:100%;max-height:190px;object-fit:contain" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:12px;color:var(--text-muted)&quot;>Photo unavailable</p>'">
+             title="Click to enlarge" onclick="openLightbox()" style="max-width:100%;max-height:190px;object-fit:contain;cursor:pointer" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:12px;color:var(--text-muted)&quot;>Photo unavailable</p>'">
       </div>
       ${photos.length > 1 ? `
       <button onclick="prevPhoto()" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;color:var(--text-primary);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.15)">&lsaquo;</button>
@@ -207,6 +220,47 @@ function nextPhoto() {
 function goToPhoto(i) {
   photoIndex = i;
   renderPhotoSlider();
+}
+
+function openLightbox() {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb || !photos.length) return;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderLightbox();
+}
+
+function closeLightbox() {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb) return;
+  lb.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderLightbox() {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb) return;
+  const photo = photos[Math.min(photoIndex, photos.length - 1)];
+  document.getElementById('lightboxImg').src = '/api/files/photos/' + photo.id;
+  document.getElementById('lightboxCaption').textContent = photo.caption || '';
+  document.getElementById('lightboxCounter').textContent = (photoIndex + 1) + ' / ' + photos.length;
+  const hasNav = photos.length > 1;
+  lb.querySelector('.photo-lightbox-nav.prev').classList.toggle('hidden', !hasNav);
+  lb.querySelector('.photo-lightbox-nav.next').classList.toggle('hidden', !hasNav);
+}
+
+function lightboxPrev() {
+  if (!photos.length) return;
+  photoIndex = (photoIndex - 1 + photos.length) % photos.length;
+  renderPhotoSlider();
+  renderLightbox();
+}
+
+function lightboxNext() {
+  if (!photos.length) return;
+  photoIndex = (photoIndex + 1) % photos.length;
+  renderPhotoSlider();
+  renderLightbox();
 }
 
 function renderProjectInfo(data) {
@@ -443,6 +497,27 @@ async function addTeacherChatComment() {
 window.addEventListener('hashchange', load);
 load();
 setInterval(loadTeacherComments, 5000);
+</script>
+
+<div id="photoLightbox" class="photo-lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="photo-lightbox-close" onclick="closeLightbox()" title="Close">&times;</button>
+  <button class="photo-lightbox-nav prev" onclick="lightboxPrev()" title="Previous">&lsaquo;</button>
+  <div class="photo-lightbox-stage">
+    <img id="lightboxImg" src="" alt="">
+    <div id="lightboxCaption" class="photo-lightbox-caption"></div>
+    <div id="lightboxCounter" class="photo-lightbox-counter"></div>
+  </div>
+  <button class="photo-lightbox-nav next" onclick="lightboxNext()" title="Next">&rsaquo;</button>
+</div>
+
+<script>
+document.addEventListener('keydown', function(e) {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb || !lb.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  else if (e.key === 'ArrowLeft') lightboxPrev();
+  else if (e.key === 'ArrowRight') lightboxNext();
+});
 </script>
 </body>
 </html>
