@@ -148,22 +148,7 @@ async function load() {
 /* Photo Slider */
 
 let photoIndex = 0;
-let photoTimer = null;
 let photos = [];
-
-function stopPhotoTimer() {
-  if (photoTimer) { clearInterval(photoTimer); photoTimer = null; }
-}
-
-function startPhotoTimer() {
-  stopPhotoTimer();
-  if (photos.length > 1) {
-    photoTimer = setInterval(() => {
-      photoIndex = (photoIndex + 1) % photos.length;
-      renderPhotoSlider();
-    }, 4000);
-  }
-}
 
 async function loadPhotoSlider() {
   if (!currentProjectId) return;
@@ -171,7 +156,6 @@ async function loadPhotoSlider() {
     photos = await get('/api/teacher/projects/' + currentProjectId + '/photos');
     photoIndex = 0;
     renderPhotoSlider();
-    startPhotoTimer();
   } catch {
     document.getElementById('photoSlider').innerHTML =
       '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Could not load photos.</p>';
@@ -213,19 +197,16 @@ function renderPhotoSlider() {
 function prevPhoto() {
   photoIndex = (photoIndex - 1 + photos.length) % photos.length;
   renderPhotoSlider();
-  startPhotoTimer();
 }
 
 function nextPhoto() {
   photoIndex = (photoIndex + 1) % photos.length;
   renderPhotoSlider();
-  startPhotoTimer();
 }
 
 function goToPhoto(i) {
   photoIndex = i;
   renderPhotoSlider();
-  startPhotoTimer();
 }
 
 function renderProjectInfo(data) {
