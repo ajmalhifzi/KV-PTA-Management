@@ -94,12 +94,16 @@ function openCreateModal() {
   document.getElementById('newScope').value = '';
   const msg = document.getElementById('createMsg');
   msg.style.display = 'none';
-  document.getElementById('createModal').style.display = 'flex';
+  const modal = document.getElementById('createModal');
+  modal.style.display = 'flex';
+  modal.classList.add('open');
   setTimeout(() => document.getElementById('newTitle').focus(), 50);
 }
 
 function closeCreateModal() {
-  document.getElementById('createModal').style.display = 'none';
+  const modal = document.getElementById('createModal');
+  modal.classList.remove('open');
+  modal.style.display = 'none';
 }
 
 async function saveNewProject() {
