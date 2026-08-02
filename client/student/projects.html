@@ -20,29 +20,38 @@
   <div class="content-area">
 
     <div id="noProject" style="display:none">
-      <div class="card" style="max-width:600px;text-align:center;padding:48px">
-        <p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Project Yet</p>
-        <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Submit your FYP idea to get started.</p>
-        <button class="btn btn-primary" onclick="showNewForm()">Create Project</button>
-      </div>
-      <div id="newProjectForm" style="display:none;max-width:600px">
-        <div class="card">
-          <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">Create Project</h3>
-          <div class="form-group"><label class="field-label">Group Name</label><input class="form-input" id="newGroupName"></div>
-          <div class="form-group"><label class="field-label">Project Title</label><input class="form-input" id="newTitle"></div>
-          <div class="form-group"><label class="field-label">Objective</label><textarea class="form-input" id="newObjective" rows="2"></textarea></div>
-          <div class="form-group"><label class="field-label">Purpose</label><textarea class="form-input" id="newPurpose" rows="2"></textarea></div>
-          <div class="form-group"><label class="field-label">Scope</label><textarea class="form-input" id="newScope" rows="2"></textarea></div>
-          <div id="newProjectMsg" style="font-size:13px;margin-bottom:12px;display:none"></div>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="saveNewProject()">Save</button>
-            <button class="btn btn-secondary" onclick="location.reload()">Cancel</button>
+      <div id="noProjectEmpty">
+        <div class="card" style="max-width:600px;text-align:center;padding:48px">
+          <p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Project Yet</p>
+          <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Submit your FYP idea to get started.</p>
+          <button class="btn btn-primary" onclick="showNewForm()">Create Project</button>
+        </div>
+        <div id="newProjectForm" style="display:none;max-width:600px">
+          <div class="card">
+            <h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">Create Project</h3>
+            <div class="form-group"><label class="field-label">Group Name</label><input class="form-input" id="newGroupName"></div>
+            <div class="form-group"><label class="field-label">Project Title</label><input class="form-input" id="newTitle"></div>
+            <div class="form-group"><label class="field-label">Objective</label><textarea class="form-input" id="newObjective" rows="2"></textarea></div>
+            <div class="form-group"><label class="field-label">Purpose</label><textarea class="form-input" id="newPurpose" rows="2"></textarea></div>
+            <div class="form-group"><label class="field-label">Scope</label><textarea class="form-input" id="newScope" rows="2"></textarea></div>
+            <div id="newProjectMsg" style="font-size:13px;margin-bottom:12px;display:none"></div>
+            <div style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="saveNewProject()">Save</button>
+              <button class="btn btn-secondary" onclick="location.reload()">Cancel</button>
+            </div>
           </div>
         </div>
       </div>
+      <div id="projectListContainer" style="display:none"></div>
     </div>
 
     <div id="projectView" style="display:none">
+      <div style="margin-bottom:12px">
+        <a href="#" onclick="backToProjectList();return false" style="font-size:13px;color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+          Back to Projects
+        </a>
+      </div>
       <div id="projectInfo" class="card" style="margin-bottom:16px">
         <div id="projectInfoHeader"></div>
         <div id="projectInfoBody" style="margin-top:16px"></div>
@@ -96,7 +105,7 @@ const user = requireAuth();
 if (user.role !== 'student') redirectByRole(user.role);
 renderPage('Projects');
 
-let projectsData = null;
+let currentProjectId = null;
 
 function timeAgo(val) {
   const diff = Date.now() - new Date(val).getTime();
@@ -115,42 +124,78 @@ function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+function getSelectedProjectId() {
+  const hash = window.location.hash.replace('#project-', '');
+  if (hash) return hash;
+  const stored = localStorage.getItem('viewProjectId');
+  if (stored) return stored;
+  return null;
+}
+
 async function load() {
-  try {
-    const data = await get('/api/student/group');
-    projectsData = data;
-
-    if (!data.project_id) {
-      document.getElementById('noProject').style.display = 'block';
-      document.getElementById('projectView').style.display = 'none';
-      if (window.location.hash && typeof loadNavProjects === 'function') {
-        loadNavProjects();
+  const projectId = getSelectedProjectId();
+  if (!projectId) {
+    document.getElementById('projectView').style.display = 'none';
+    const container = document.getElementById('noProject');
+    container.style.display = 'block';
+    try {
+      const projects = await get('/api/student/projects');
+      if (!projects.length) {
+        document.getElementById('noProjectEmpty').style.display = 'block';
+        document.getElementById('projectListContainer').style.display = 'none';
+      } else {
+        document.getElementById('noProjectEmpty').style.display = 'none';
+        const listContainer = document.getElementById('projectListContainer');
+        listContainer.style.display = 'block';
+        listContainer.innerHTML = '<div style="max-width:700px;margin:0 auto">' +
+          '<h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">My Projects</h3>' +
+          projects.map(p => {
+            const badgeClass = p.status === 'approved' ? 'badge-green' : p.status === 'rejected' ? 'badge-red' : p.status === 'submitted' ? 'badge-yellow' : 'badge-gray';
+            return '<div class="card" style="cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" onclick="selectProject(\'' + p.id + '\')">' +
+              '<div><div style="font-size:15px;font-weight:600;color:var(--text-primary)">' + escapeHtml(p.title || '(Untitled)') + '</div>' +
+              '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">' + escapeHtml(p.group_name) + '</div></div>' +
+              '<span class="badge ' + badgeClass + '" style="font-size:11px">' + p.status + '</span></div>';
+          }).join('') + '</div>';
       }
-      return;
+    } catch {
+      document.getElementById('noProjectEmpty').style.display = 'block';
+      document.getElementById('projectListContainer').style.display = 'none';
     }
+    return;
+  }
 
+  currentProjectId = projectId;
+
+  try {
+    const data = await get('/api/student/projects/' + projectId);
     document.getElementById('noProject').style.display = 'none';
     document.getElementById('projectView').style.display = 'block';
 
     renderProjectInfo(data);
     renderGitHub(data);
     loadComments();
-
-    const hash = window.location.hash.replace('#project-', '');
-    if (hash && hash === data.project_id) {
-      window.location.hash = '';
-    }
-
-    if (typeof loadNavProjects === 'function') loadNavProjects();
   } catch {
     document.getElementById('noProject').style.display = 'block';
     document.getElementById('projectView').style.display = 'none';
   }
 }
 
+function selectProject(id) {
+  localStorage.setItem('viewProjectId', id);
+  window.location.hash = '#project-' + id;
+  load();
+}
+
+function backToProjectList() {
+  localStorage.removeItem('viewProjectId');
+  window.location.hash = '';
+  load();
+}
+
 function renderProjectInfo(data) {
   const status = data.status || 'draft';
   const badgeClass = status === 'approved' ? 'badge-green' : status === 'rejected' ? 'badge-red' : status === 'submitted' ? 'badge-yellow' : 'badge-gray';
+  const students = data.students && data.students.length ? data.students.map(s => escapeHtml(s.full_name)).join(', ') : '';
 
   document.getElementById('projectInfoHeader').innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
@@ -159,6 +204,7 @@ function renderProjectInfo(data) {
         <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:13px;color:var(--text-secondary)">
           <span><strong style="color:var(--primary)">Group:</strong> ${escapeHtml(data.group_name)}</span>
           <span><strong style="color:var(--primary)">Teacher:</strong> ${escapeHtml(data.teacher_name)} (${escapeHtml(data.teacher_email)})</span>
+          ${students ? '<span><strong style="color:var(--primary)">Students:</strong> ' + students + '</span>' : ''}
         </div>
       </div>
       <span class="badge ${badgeClass}" style="font-size:12px">${status}</span>
@@ -198,7 +244,6 @@ async function saveProject() {
   msg.style.display = 'none';
   try {
     await put('/api/student/group', {
-      group_name: projectsData.group_name,
       title: document.getElementById('editTitle').value,
       objective: document.getElementById('editObjective').value,
       purpose: document.getElementById('editPurpose').value,
@@ -224,7 +269,7 @@ async function submitProject() {
 }
 
 function showNewForm() {
-  document.getElementById('noProject').querySelector('.card').style.display = 'none';
+  document.getElementById('noProjectEmpty').querySelector('.card').style.display = 'none';
   document.getElementById('newProjectForm').style.display = 'block';
 }
 
@@ -251,7 +296,7 @@ async function saveNewProject() {
 
 function renderGitHub(data) {
   const card = document.getElementById('githubCard');
-  if (!data.project_id) { card.style.display = 'none'; return; }
+  if (!data.id) { card.style.display = 'none'; return; }
   card.style.display = 'block';
 
   const content = document.getElementById('githubCardContent');
@@ -460,6 +505,7 @@ if (urlParams.get('github') === 'connected') {
   setTimeout(() => alert('GitHub connected successfully!'), 500);
 }
 
+window.addEventListener('hashchange', load);
 load();
 setInterval(loadComments, 5000);
 </script>
