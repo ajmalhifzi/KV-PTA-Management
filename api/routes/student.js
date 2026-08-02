@@ -41,6 +41,61 @@ router.get('/projects/:projectId', async (req, res) => {
   res.json(rows[0]);
 });
 
+router.put('/projects/:projectId', async (req, res) => {
+  const { projectId } = req.params;
+  const { title, objective, purpose, scope } = req.body;
+
+  const owned = await pool.query(`
+    SELECT p.id FROM projects p
+    JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
+    WHERE p.id = $1 AND tsa.student_id = $2
+  `, [projectId, req.user.id]);
+  if (!owned.rows.length) return res.status(404).json({ error: 'Project not found' });
+
+  const fields = []; const vals = []; let idx = 1;
+  if (title !== undefined) { fields.push(`title = $${idx++}`); vals.push(title); }
+  if (objective !== undefined) { fields.push(`objective = $${idx++}`); vals.push(objective); }
+  if (purpose !== undefined) { fields.push(`purpose = $${idx++}`); vals.push(purpose); }
+  if (scope !== undefined) { fields.push(`scope = $${idx++}`); vals.push(scope); }
+  if (!fields.length) return res.status(400).json({ error: 'Nothing to update' });
+  fields.push('updated_at = NOW()');
+  vals.push(projectId);
+
+  const { rows } = await pool.query(
+    `UPDATE projects SET ${fields.join(', ')} WHERE id = $${idx} RETURNING *`,
+    vals
+  );
+  res.json(rows[0]);
+});
+
+router.post('/projects/:projectId/submit', async (req, res) => {
+  const { projectId } = req.params;
+  const { rowCount, rows } = await pool.query(`
+    UPDATE projects p SET status = $1, submitted_at = NOW(), updated_at = NOW()
+    FROM teacher_student_assignments tsa
+    WHERE p.id = $2 AND tsa.group_id = p.group_id AND tsa.student_id = $3 AND p.status = $4
+    RETURNING p.*
+  `, ['submitted', projectId, req.user.id, 'draft']);
+  if (!rowCount) return res.status(400).json({ error: 'No draft project to submit, or already submitted' });
+
+  const { rows: submitTeachers } = await pool.query(
+    `SELECT g.teacher_id FROM teacher_student_assignments tsa
+     JOIN groups g ON g.id = tsa.group_id WHERE tsa.student_id = $1`,
+    [req.user.id]
+  );
+  if (submitTeachers.length) {
+    await createNotification({
+      userId: submitTeachers[0].teacher_id,
+      type: 'project_status',
+      title: 'Project Submitted',
+      message: 'Your student has submitted their project for review.',
+      relatedUrl: '/teacher/dashboard.html'
+    });
+  }
+
+  res.json(rows[0]);
+});
+
 router.get('/group', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT g.*, u.full_name AS teacher_name, u.email AS teacher_email,

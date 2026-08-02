@@ -132,7 +132,12 @@ function renderPage(title) {
 function openChat() {
   const user = getUser();
   if (!user) return;
-  if (user.role === 'student') window.location.href = '/student/projects.html';
+  if (user.role === 'student') {
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get('project');
+    if (id) window.location.href = '/student/project.html?project=' + id;
+    else window.location.href = '/student/projects.html';
+  }
   else if (user.role === 'teacher') {
     const id = localStorage.getItem('viewProjectId');
     if (id) window.location.href = '/teacher/project-detail.html';
