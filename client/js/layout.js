@@ -18,6 +18,7 @@ const NAV = {
     { label: 'Student Uploads', icon: 'upload', href: '/teacher/uploads.html' },
   ],
   student: [
+    { label: 'Dashboard', icon: 'grid', href: '/student/dashboard.html' },
     { label: 'Projects', icon: 'file-text', href: '/student/projects.html' },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
     { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
