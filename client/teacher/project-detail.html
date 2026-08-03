@@ -292,7 +292,10 @@ async function loadComments() {
       ).join('');
       list.scrollTop = list.scrollHeight;
     }
-  } catch { if (list) list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Could not load messages.</p>'; }
+  } catch {
+    const list = document.getElementById('chatList');
+    if (list) list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">Could not load messages.</p>';
+  }
 }
 
 async function addChatComment() {
