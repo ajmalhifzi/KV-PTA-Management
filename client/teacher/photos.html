@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Photos - KV PTA Management</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/css/style.css">
+<style>
+  .photo-lightbox { position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s }
+  .photo-lightbox.open { opacity:1;pointer-events:all }
+  .photo-lightbox img { max-width:min(92vw,1100px);max-height:80vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5) }
+  .photo-lightbox-stage { display:flex;flex-direction:column;align-items:center;gap:12px }
+  .photo-lightbox-caption { font-size:14px;color:#e9ecef;text-align:center;max-width:min(92vw,1100px) }
+  .photo-lightbox-counter { font-size:12px;color:#adb5bd }
+  .photo-lightbox-close { position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center }
+  .photo-lightbox-close:hover { background:rgba(255,255,255,.25) }
+  .photo-lightbox-nav { position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s }
+  .photo-lightbox-nav:hover { background:rgba(255,255,255,.25) }
+  .photo-lightbox-nav.prev { left:20px }
+  .photo-lightbox-nav.next { right:20px }
+  .photo-lightbox-nav.hidden { display:none }
+</style>
+</head>
+<body>
+<div id="sidebar" class="sidebar"></div>
+<div class="main-content">
+  <div id="header" class="top-header"></div>
+  <div class="content-area">
+    <div class="card" style="padding:0">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">Uploaded Photos</div>
+      <div id="photosContainer" style="padding:16px 20px"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/js/auth.js"></script>
+<script src="/js/layout.js"></script>
+<script>
+const user = requireAuth();
+if (user.role !== 'teacher') redirectByRole(user.role);
+renderPage('Photos');
+
+let photos = [];
+let photoIndex = 0;
+
+function escapeHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function localDayKey(d) {
+  const t = new Date(d);
+  return t.getFullYear() + '-' + (t.getMonth() + 1) + '-' + t.getDate();
+}
+
+function photoDayLabel(d) {
+  const t = new Date(d);
+  const today = new Date();
+  const startOfDay = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const diff = Math.round((startOfDay(today) - startOfDay(t)) / 86400000);
+  if (diff === 0) return 'Today';
+  if (diff === 1) return 'Yesterday';
+  return t.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function photoTimeLabel(d) {
+  return new Date(d).toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function load() {
+  let data;
+  try { data = await get('/api/teacher/photos'); } catch { data = []; }
+  photos = data;
+  renderPhotos();
+}
+
+function renderPhotos() {
+  const container = document.getElementById('photosContainer');
+  if (!photos.length) {
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--text-muted);font-size:13px">No photos uploaded yet.</div>';
+    return;
+  }
+
+  const groups = {};
+  for (const p of photos) {
+    const key = localDayKey(p.uploaded_at);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(p);
+  }
+
+  const sortedKeys = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+  container.innerHTML = sortedKeys.map(key => {
+    const group = groups[key];
+    const label = photoDayLabel(group[0].uploaded_at);
+    return `
+      <div style="font-weight:700;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 8px">${label} &middot; ${group.length} photo${group.length > 1 ? 's' : ''}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px">
+        ${group.map(p => {
+          return `
+            <div style="position:relative;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-card)">
+              <div style="height:110px;display:flex;align-items:center;justify-content:center;background:#f5f7fb;overflow:hidden;cursor:pointer" onclick="openLightboxAt(${photos.indexOf(p)})">
+                <img src="/api/files/photos/${p.id}" alt="${escapeHtml(p.caption || 'photo')}" style="max-width:100%;max-height:110px;object-fit:contain" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:11px;color:var(--text-muted)&quot;>Unavailable</p>'">
+              </div>
+              <div style="padding:8px 10px">
+                <div style="font-size:12px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(p.project_title || 'Project')}</div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(p.caption || '')}</div>
+                <div style="font-size:10px;color:var(--text-muted);margin-top:3px">${escapeHtml(p.uploader_name || '')} &middot; ${photoTimeLabel(p.uploaded_at)}</div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+}
+
+function openLightboxAt(index) {
+  photoIndex = index;
+  openLightbox();
+}
+
+function openLightbox() {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb || !photos.length) return;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderLightbox();
+}
+
+function closeLightbox() {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb) return;
+  lb.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function renderLightbox() {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb) return;
+  const photo = photos[Math.min(photoIndex, photos.length - 1)];
+  document.getElementById('lightboxImg').src = '/api/files/photos/' + photo.id;
+  document.getElementById('lightboxCaption').textContent = (photo.caption ? photo.caption + ' · ' : '') + (photo.project_title || '');
+  document.getElementById('lightboxCounter').textContent = (photoIndex + 1) + ' / ' + photos.length;
+  const hasNav = photos.length > 1;
+  lb.querySelector('.photo-lightbox-nav.prev').classList.toggle('hidden', !hasNav);
+  lb.querySelector('.photo-lightbox-nav.next').classList.toggle('hidden', !hasNav);
+}
+
+function lightboxPrev() {
+  if (!photos.length) return;
+  photoIndex = (photoIndex - 1 + photos.length) % photos.length;
+  renderLightbox();
+}
+
+function lightboxNext() {
+  if (!photos.length) return;
+  photoIndex = (photoIndex + 1) % photos.length;
+  renderLightbox();
+}
+
+/* Init */
+load();
+</script>
+
+<div id="photoLightbox" class="photo-lightbox" onclick="if(event.target===this)closeLightbox()">
+  <button class="photo-lightbox-close" onclick="closeLightbox()" title="Close">&times;</button>
+  <button class="photo-lightbox-nav prev" onclick="lightboxPrev()" title="Previous">&lsaquo;</button>
+  <div class="photo-lightbox-stage">
+    <img id="lightboxImg" src="" alt="">
+    <div id="lightboxCaption" class="photo-lightbox-caption"></div>
+    <div id="lightboxCounter" class="photo-lightbox-counter"></div>
+  </div>
+  <button class="photo-lightbox-nav next" onclick="lightboxNext()" title="Next">&rsaquo;</button>
+</div>
+
+<script>
+document.addEventListener('keydown', function(e) {
+  const lb = document.getElementById('photoLightbox');
+  if (!lb || !lb.classList.contains('open')) return;
+  if (e.key === 'Escape') closeLightbox();
+  else if (e.key === 'ArrowLeft') lightboxPrev();
+  else if (e.key === 'ArrowRight') lightboxNext();
+});
+</script>
+</body>
+</html>

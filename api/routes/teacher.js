@@ -149,6 +149,20 @@ router.get('/projects/:projectId/photos', async (req, res) => {
   res.json(rows);
 });
 
+router.get('/photos', async (req, res) => {
+  const { rows } = await pool.query(`
+    SELECT ph.id, ph.project_id, ph.uploader_id, ph.caption, ph.file_type, ph.uploaded_at,
+           u.full_name AS uploader_name, p.title AS project_title
+    FROM project_photos ph
+    JOIN projects p ON p.id = ph.project_id
+    JOIN groups g ON g.id = p.group_id
+    JOIN users u ON u.id = ph.uploader_id
+    WHERE g.teacher_id = $1
+    ORDER BY ph.uploaded_at ASC
+  `, [req.user.id]);
+  res.json(rows);
+});
+
 router.get('/uploads', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT pu.id, pu.project_id, pu.student_id, pu.teacher_id, pu.file_name, pu.file_type, pu.category, pu.uploaded_at,

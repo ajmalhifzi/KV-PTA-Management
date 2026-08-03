@@ -13,6 +13,7 @@ const NAV = {
   teacher: [
     { label: 'Dashboard', icon: 'grid', href: '/teacher/dashboard.html' },
     { label: 'Projects', icon: 'file-text', href: '/teacher/projects.html' },
+    { label: 'Photos', icon: 'book-open', href: '/teacher/photos.html' },
     { label: 'Meeting Logs', icon: 'file-text', href: '/teacher/meetings.html' },
     { label: 'Resources', icon: 'upload', href: '/teacher/resources.html' },
     { label: 'Student Uploads', icon: 'upload', href: '/teacher/uploads.html' },
@@ -20,6 +21,7 @@ const NAV = {
   student: [
     { label: 'Dashboard', icon: 'grid', href: '/student/dashboard.html' },
     { label: 'Projects', icon: 'file-text', href: '/student/projects.html' },
+    { label: 'Photos', icon: 'book-open', href: '/student/photos.html' },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
     { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
     { label: 'Uploads', icon: 'upload', href: '/student/uploads.html' },

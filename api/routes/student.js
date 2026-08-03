@@ -382,7 +382,7 @@ router.get('/meetings', async (req, res) => {
 router.get('/project-photos', async (req, res) => {
   const { rows } = await pool.query(`
     SELECT ph.id, ph.project_id, ph.uploader_id, ph.caption, ph.file_type, ph.uploaded_at,
-           u.full_name AS uploader_name
+           u.full_name AS uploader_name, p.title AS project_title
     FROM project_photos ph
     JOIN projects p ON p.id = ph.project_id
     JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
