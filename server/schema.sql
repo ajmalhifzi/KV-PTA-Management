@@ -68,7 +68,7 @@ CREATE TABLE project_uploads (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
   student_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  teacher_id UUID REFERENCES users(id),
+  teacher_id UUID REFERENCES users(id) ON DELETE SET NULL,
   file_name VARCHAR(255) NOT NULL,
   file_type VARCHAR(100),
   file_url TEXT,
@@ -103,7 +103,7 @@ CREATE TABLE error_logs (
 CREATE TABLE meeting_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
-  author_id UUID NOT NULL REFERENCES users(id),
+  author_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   meeting_date TIMESTAMPTZ NOT NULL,
   notes TEXT NOT NULL,
   action_items TEXT,
