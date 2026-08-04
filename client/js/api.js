@@ -11,7 +11,14 @@ async function api(path, options = {}) {
   try {
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers, signal: controller.signal });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    if (!res.ok) {
+      if (res.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/';
+      }
+      throw new Error(data.error || 'Request failed');
+    }
     return data;
   } finally {
     clearTimeout(timeout);
