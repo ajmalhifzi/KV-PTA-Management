@@ -167,7 +167,13 @@ let photos = [];
 async function loadPhotoSlider() {
   if (!currentProjectId) return;
   try {
-    photos = await get('/api/teacher/projects/' + currentProjectId + '/photos');
+    const all = await get('/api/teacher/projects/' + currentProjectId + '/photos');
+    const todayKey = localDayKey(new Date());
+    if (all.some(p => localDayKey(p.uploaded_at) === todayKey)) {
+      photos = all.filter(p => localDayKey(p.uploaded_at) === todayKey);
+    } else {
+      photos = all.length ? all.filter(p => localDayKey(p.uploaded_at) === localDayKey(all.reduce((a, b) => new Date(a.uploaded_at) > new Date(b.uploaded_at) ? a : b).uploaded_at)) : [];
+    }
     photoIndex = Math.max(0, photos.length - 1);
     renderPhotoSlider();
   } catch {
