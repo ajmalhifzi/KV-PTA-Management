@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Uploads - KV PTA Management</title>
+<title>My Uploads - KV PTA Management</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -16,21 +16,17 @@
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">Upload File</div>
       <div style="padding:20px">
         <div style="display:flex;gap:12px;flex-wrap:wrap">
-          <input class="form-input" id="fileName" placeholder="File name" style="flex:1;min-width:200px">
+          <input class="form-input" id="resTitle" placeholder="Resource title" style="flex:1;min-width:200px">
           <input type="file" id="fileInput" accept=".pdf,.doc,.docx,.txt,.md,.ppt,.pptx,.xls,.xlsx,.csv,.jpg,.jpeg,.png,.zip" style="flex:2;min-width:300px;padding:6px 12px;border:1px solid var(--border);border-radius:6px;font-size:14px">
-          <select class="form-input" id="fileCategory" style="width:160px">
-            <option value="supplementary">Supplementary</option>
-            <option value="formal">Formal Document</option>
-          </select>
-          <button class="btn btn-primary" onclick="uploadFile()">Upload</button>
+          <button class="btn btn-primary" onclick="uploadResource()">Upload</button>
         </div>
-        <div id="uploadMsg" style="font-size:13px;margin-top:8px;display:none"></div>
+        <div id="resMsg" style="font-size:13px;margin-top:8px;display:none"></div>
       </div>
     </div>
 
     <div class="card" style="padding:0">
       <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:600;font-size:14px;color:var(--text-primary)">My Uploads</div>
-      <div id="uploadsContainer" style="padding:16px 20px"></div>
+      <div id="resourcesContainer" style="padding:16px 20px"></div>
     </div>
   </div>
 </div>
@@ -40,24 +36,24 @@
 <script src="/js/layout.js"></script>
 <script>
 const user = requireAuth();
-if (user.role !== 'student') redirectByRole(user.role);
-renderPage('Uploads');
+if (user.role !== 'teacher') redirectByRole(user.role);
+renderPage('My Uploads');
 
 async function load() {
-  let uploads;
-  try { uploads = await get('/api/student/uploads'); } catch { uploads = []; }
-  const container = document.getElementById('uploadsContainer');
+  let resources;
+  try { resources = await get('/api/teacher/resources'); } catch { resources = []; }
+  const container = document.getElementById('resourcesContainer');
 
-  if (uploads.length === 0) {
-    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--text-muted);font-size:13px">No files uploaded</div>';
+  if (resources.length === 0) {
+    container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--text-muted);font-size:13px">No resources uploaded</div>';
     return;
   }
 
   const groups = {};
-  for (const u of uploads) {
-    const key = new Date(u.uploaded_at).toISOString().split('T')[0];
+  for (const r of resources) {
+    const key = new Date(r.created_at).toISOString().split('T')[0];
     if (!groups[key]) groups[key] = [];
-    groups[key].push(u);
+    groups[key].push(r);
   }
 
   const today = new Date().toISOString().split('T')[0];
@@ -68,10 +64,9 @@ async function load() {
     const label = labels[key] || new Date(key + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
     return `
       <div style="font-weight:700;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
-      ${groups[key].map(u => {
-        const d = new Date(u.uploaded_at);
+      ${groups[key].map(r => {
+        const d = new Date(r.created_at);
         const timeStr = d.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
-        const badgeClass = u.category === 'formal' ? 'badge-blue' : 'badge-gray';
         return `
           <div style="border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px">
             <div style="width:34px;height:34px;border-radius:6px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -79,14 +74,12 @@ async function load() {
             </div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:600;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                <a href="/api/files/uploads/${u.id}" target="_blank" style="color:inherit;text-decoration:none">${u.file_name}</a>
+                <a href="/api/files/resources/${r.id}" target="_blank" style="color:inherit;text-decoration:none">${r.title}</a>
               </div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                <span class="badge ${badgeClass}" style="font-size:9px;padding:1px 6px">${u.category}</span>
-                ${u.file_type ? '<span>·</span><span class="badge badge-gray" style="font-size:9px;padding:1px 6px">' + u.file_type + '</span>' : ''}
+                <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">${r.file_type || '-'}</span>
                 <span>·</span>
                 <span>${timeStr}</span>
-                ${u.teacher_id ? '<span>·</span><span style="color:var(--primary)">by teacher</span>' : ''}
               </div>
             </div>
           </div>
@@ -96,16 +89,13 @@ async function load() {
   }).join('');
 }
 
-async function uploadFile() {
+async function uploadResource() {
+  const title = document.getElementById('resTitle').value;
   const fileInput = document.getElementById('fileInput');
-  const fileNameInput = document.getElementById('fileName');
-  const category = document.getElementById('fileCategory').value;
-  const msg = document.getElementById('uploadMsg');
+  const msg = document.getElementById('resMsg');
 
-  if (!fileInput.files || !fileInput.files[0]) {
-    msg.textContent = 'Please select a file';
-    msg.style.color = '#c92a2a'; msg.style.display = 'block'; return;
-  }
+  if (!title) { msg.textContent = 'Title required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!fileInput.files || !fileInput.files[0]) { msg.textContent = 'Please select a file'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
 
   const file = fileInput.files[0];
   if (file.size > 25 * 1024 * 1024) {
@@ -113,7 +103,6 @@ async function uploadFile() {
     msg.style.color = '#c92a2a'; msg.style.display = 'block'; return;
   }
 
-  const file_name = fileNameInput.value || file.name;
   msg.textContent = 'Uploading...';
   msg.style.color = '#2b8a3e'; msg.style.display = 'block';
 
@@ -122,10 +111,10 @@ async function uploadFile() {
     reader.onload = async function(e) {
       const base64 = e.target.result.split(',')[1];
       try {
-        await post('/api/student/uploads', { file_name, file_data: base64, file_type: file.type, category });
+        await post('/api/teacher/resources', { title, file_data: base64, file_type: file.type });
+        document.getElementById('resTitle').value = '';
         fileInput.value = '';
-        fileNameInput.value = '';
-        msg.textContent = 'File uploaded!';
+        msg.textContent = 'Resource uploaded!';
         msg.style.color = '#2b8a3e'; msg.style.display = 'block';
         load();
         setTimeout(() => msg.style.display = 'none', 2000);

@@ -15,7 +15,7 @@ const NAV = {
     { label: 'Projects', icon: 'file-text', href: '/teacher/projects.html' },
     { label: 'Photos', icon: 'book-open', href: '/teacher/photos.html' },
     { label: 'Meeting Logs', icon: 'file-text', href: '/teacher/meetings.html' },
-    { label: 'Resources', icon: 'upload', href: '/teacher/resources.html' },
+    { label: 'My Uploads', icon: 'upload', href: '/teacher/my-uploads.html' },
     { label: 'Student Uploads', icon: 'upload', href: '/teacher/uploads.html' },
   ],
   student: [
@@ -23,7 +23,7 @@ const NAV = {
     { label: 'Projects', icon: 'file-text', href: '/student/projects.html' },
     { label: 'Photos', icon: 'book-open', href: '/student/photos.html' },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
-    { label: 'Uploads', icon: 'upload', href: '/student/uploads.html' },
+    { label: 'My Uploads', icon: 'upload', href: '/student/my-uploads.html' },
     { label: 'From Teacher', icon: 'upload', href: '/student/teacher-uploads.html' },
   ],
 };
