@@ -85,9 +85,10 @@ function openEdit(id, fullName, email, role) {
   document.getElementById('editPassword').value = '';
   document.getElementById('editMsg').style.display = 'none';
   document.getElementById('editModal').style.display = 'flex';
+  document.getElementById('editModal').classList.add('open');
 }
 
-function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+function closeEditModal() { document.getElementById('editModal').style.display = 'none'; document.getElementById('editModal').classList.remove('open'); }
 
 async function handleUpdate() {
   const id = document.getElementById('editId').value;
@@ -121,10 +122,11 @@ function confirmDelete(id, name) {
   document.getElementById('confirmText').textContent = 'Delete "' + name + '"? This cannot be undone.';
   document.getElementById('confirmMsg').style.display = 'none';
   document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmModal').classList.add('open');
   document.getElementById('confirmBtn').onclick = handleDelete;
 }
 
-function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; deleteTargetId = null; }
+function closeConfirmModal() { document.getElementById('confirmModal').style.display = 'none'; document.getElementById('confirmModal').classList.remove('open'); deleteTargetId = null; }
 
 async function handleDelete() {
   const msg = document.getElementById('confirmMsg');

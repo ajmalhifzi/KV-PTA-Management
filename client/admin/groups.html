@@ -101,9 +101,10 @@ async function showCreateModal() {
   const sel = document.getElementById('newGroupTeacher');
   sel.innerHTML = teachers.map(t => `<option value="${t.id}">${t.full_name}</option>`).join('');
   document.getElementById('createModal').style.display = 'flex';
+  document.getElementById('createModal').classList.add('open');
 }
 
-function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; }
+function closeCreateModal() { document.getElementById('createModal').style.display = 'none'; document.getElementById('createModal').classList.remove('open'); }
 
 async function handleCreate() {
   const group_name = document.getElementById('newGroupName').value.trim();
@@ -139,9 +140,10 @@ async function showAssignModal(groupId, groupName) {
   }).join('');
 
   document.getElementById('assignModal').style.display = 'flex';
+  document.getElementById('assignModal').classList.add('open');
 }
 
-function closeAssignModal() { document.getElementById('assignModal').style.display = 'none'; }
+function closeAssignModal() { document.getElementById('assignModal').style.display = 'none'; document.getElementById('assignModal').classList.remove('open'); }
 
 async function handleAssign() {
   const groupId = document.getElementById('assignGroupId').value;
@@ -167,10 +169,11 @@ function confirmDelete(id, name) {
   deleteTargetId = id;
   document.getElementById('confirmText').textContent = 'Delete group "' + name + '"? Students will be unassigned.';
   document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmModal').classList.add('open');
   document.getElementById('confirmBtn').onclick = handleDelete;
 }
 
-function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; deleteTargetId = null; }
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; document.getElementById('confirmModal').classList.remove('open'); deleteTargetId = null; }
 
 async function handleDelete() {
   try {

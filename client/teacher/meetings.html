@@ -375,11 +375,13 @@ function editMeeting(id) {
   document.getElementById('editNextLabel').textContent = fmtLabel(nd, nt, 'Next meeting');
   document.getElementById('editFormMsg').style.display = 'none';
   document.getElementById('editModal').style.display = 'flex';
+  document.getElementById('editModal').classList.add('open');
 }
 
 function closeEditModal() {
   editId = null;
   document.getElementById('editModal').style.display = 'none';
+  document.getElementById('editModal').classList.remove('open');
   document.getElementById('editFormMsg').style.display = 'none';
 }
 
@@ -418,6 +420,7 @@ async function saveEditMeeting() {
 async function confirmDelete(id) {
   document.getElementById('confirmText').textContent = 'Delete this meeting log? This cannot be undone.';
   document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmModal').classList.add('open');
   document.getElementById('confirmBtn').onclick = async function() {
     try {
       await api('/api/teacher/meetings/' + id, { method: 'DELETE' });
@@ -427,7 +430,7 @@ async function confirmDelete(id) {
   };
 }
 
-function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; }
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; document.getElementById('confirmModal').classList.remove('open'); }
 
 loadGroups();
 load();

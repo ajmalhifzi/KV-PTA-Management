@@ -128,6 +128,7 @@ function confirmThen(fn) {
   deleteAction = fn;
   document.getElementById('confirmText').textContent = 'Delete this file? This cannot be undone.';
   document.getElementById('confirmModal').style.display = 'flex';
+  document.getElementById('confirmModal').classList.add('open');
   document.getElementById('confirmBtn').onclick = async function() {
     await deleteAction();
     closeConfirm();
@@ -135,7 +136,7 @@ function confirmThen(fn) {
   };
 }
 
-function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; deleteAction = null; }
+function closeConfirm() { document.getElementById('confirmModal').style.display = 'none'; document.getElementById('confirmModal').classList.remove('open'); deleteAction = null; }
 
 async function deleteUpload(id) {
   confirmThen(() => api('/api/admin/uploads/' + id, { method: 'DELETE' }));
