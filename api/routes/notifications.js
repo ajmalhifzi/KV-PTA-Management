@@ -7,6 +7,15 @@ router.use(authenticate);
 
 async function createNotification({ userId, type, title, message, relatedUrl }) {
   try {
+    const existing = await pool.query(
+      `SELECT id FROM notifications
+       WHERE user_id = $1 AND type = $2 AND title = $3
+         AND (message = $4 OR ($4 IS NULL AND message IS NULL))
+         AND is_read = false
+       LIMIT 1`,
+      [userId, type, title, message || null]
+    );
+    if (existing.rows.length) return;
     await pool.query(
       `INSERT INTO notifications (user_id, type, title, message, related_url)
        VALUES ($1, $2, $3, $4, $5)`,

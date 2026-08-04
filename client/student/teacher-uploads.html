@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Teacher Uploads - KV PTA Management</title>
+<title>From Teacher - KV PTA Management</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css">
 </head>
@@ -27,23 +27,51 @@
 <script>
 const user = requireAuth();
 if (user.role !== 'student') redirectByRole(user.role);
-renderPage('Teacher Uploads');
+renderPage('From Teacher');
 
 async function load() {
-  let uploads;
-  try { uploads = await get('/api/student/teacher-uploads'); } catch { uploads = []; }
+  let uploads = [];
+  let resources = [];
+  try { uploads = await get('/api/student/teacher-uploads'); } catch {}
+  try { resources = await get('/api/student/resources'); } catch {}
   const container = document.getElementById('uploadsContainer');
 
-  if (uploads.length === 0) {
+  const items = [];
+  for (const u of uploads) {
+    items.push({
+      id: u.id,
+      url: '/api/files/uploads/' + u.id,
+      name: u.file_name,
+      teacherName: u.teacher_name,
+      category: u.category,
+      fileType: u.file_type,
+      date: u.uploaded_at,
+      source: 'upload'
+    });
+  }
+  for (const r of resources) {
+    items.push({
+      id: r.id,
+      url: '/api/files/resources/' + r.id,
+      name: r.title,
+      teacherName: r.teacher_name,
+      category: 'resource',
+      fileType: r.file_type,
+      date: r.created_at,
+      source: 'resource'
+    });
+  }
+
+  if (items.length === 0) {
     container.innerHTML = '<div style="padding:8px 0;text-align:center;color:var(--text-muted);font-size:13px">No files from your teacher yet</div>';
     return;
   }
 
   const groups = {};
-  for (const u of uploads) {
-    const key = new Date(u.uploaded_at).toISOString().split('T')[0];
+  for (const item of items) {
+    const key = new Date(item.date).toISOString().split('T')[0];
     if (!groups[key]) groups[key] = [];
-    groups[key].push(u);
+    groups[key].push(item);
   }
 
   const today = new Date().toISOString().split('T')[0];
@@ -54,10 +82,11 @@ async function load() {
     const label = labels[key] || new Date(key + 'T12:00:00').toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
     return `
       <div style="font-weight:700;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
-      ${groups[key].map(u => {
-        const d = new Date(u.uploaded_at);
+      ${groups[key].sort((a, b) => new Date(b.date) - new Date(a.date)).map(item => {
+        const d = new Date(item.date);
         const timeStr = d.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' });
-        const badgeClass = u.category === 'formal' ? 'badge-blue' : 'badge-gray';
+        const badgeClass = item.category === 'formal' ? 'badge-blue' : item.source === 'resource' ? 'badge-green' : 'badge-gray';
+        const typeLabel = item.source === 'resource' ? 'Resource' : (item.category || 'upload');
         return `
           <div style="border:1.5px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:6px">
             <div style="width:34px;height:34px;border-radius:6px;background:var(--primary-light);display:flex;align-items:center;justify-content:center;flex-shrink:0">
@@ -65,13 +94,13 @@ async function load() {
             </div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:600;font-size:13px;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                <a href="/api/files/uploads/${u.id}" target="_blank" style="color:inherit;text-decoration:none">${u.file_name}</a>
+                <a href="${item.url}" target="_blank" style="color:inherit;text-decoration:none">${item.name}</a>
               </div>
               <div style="font-size:11px;color:var(--text-secondary);margin-top:1px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-                <span>${u.teacher_name}</span>
+                <span>${item.teacherName}</span>
                 <span>·</span>
-                <span class="badge ${badgeClass}" style="font-size:9px;padding:1px 6px">${u.category}</span>
-                ${u.file_type ? '<span>·</span><span class="badge badge-gray" style="font-size:9px;padding:1px 6px">' + u.file_type + '</span>' : ''}
+                <span class="badge ${badgeClass}" style="font-size:9px;padding:1px 6px">${typeLabel}</span>
+                ${item.fileType ? '<span>·</span><span class="badge badge-gray" style="font-size:9px;padding:1px 6px">' + item.fileType + '</span>' : ''}
                 <span>·</span>
                 <span>${timeStr}</span>
               </div>

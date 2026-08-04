@@ -247,7 +247,7 @@ router.post('/resources', async (req, res) => {
       type: 'resource',
       title: 'New Resource Available',
       message: 'Your teacher shared: ' + title,
-      relatedUrl: '/student/resources.html'
+      relatedUrl: '/student/teacher-uploads.html'
     });
   }
 

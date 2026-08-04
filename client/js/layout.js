@@ -23,7 +23,6 @@ const NAV = {
     { label: 'Projects', icon: 'file-text', href: '/student/projects.html' },
     { label: 'Photos', icon: 'book-open', href: '/student/photos.html' },
     { label: 'Meetings', icon: 'message-square', href: '/student/meetings.html' },
-    { label: 'Resources', icon: 'book-open', href: '/student/resources.html' },
     { label: 'Uploads', icon: 'upload', href: '/student/uploads.html' },
     { label: 'From Teacher', icon: 'upload', href: '/student/teacher-uploads.html' },
   ],
