@@ -58,6 +58,9 @@ function renderSidebar() {
   const navItems = NAV[user.role] || [];
   const currentPath = window.location.pathname;
 
+  const expanded = localStorage.getItem('kvSidebar') !== 'collapsed';
+  document.body.classList.toggle('sidebar-expanded', expanded);
+
   const sidebar = document.getElementById('sidebar');
   sidebar.innerHTML = `
     <div class="sidebar-logo">
@@ -72,6 +75,7 @@ function renderSidebar() {
         return `
           <a class="nav-item ${isActive ? 'active' : ''}" href="${item.href}">
             ${ICONS[item.icon] || ''}
+            <span class="nav-label">${item.label}</span>
             <span class="nav-tooltip">${item.label}</span>
           </a>
         `;
@@ -80,10 +84,20 @@ function renderSidebar() {
     <div class="sidebar-footer">
       <a class="nav-item" onclick="logout()">
         ${ICONS['log-out']}
-        <span class="nav-tooltip">Logout</span>
+        <span class="nav-label">Logout</span>
+      </a>
+      <a class="nav-item" onclick="toggleSidebar()" title="Collapse / Expand">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+        <span class="nav-label">Collapse</span>
       </a>
     </div>
   `;
+}
+
+function toggleSidebar() {
+  const expanded = document.body.classList.contains('sidebar-expanded');
+  document.body.classList.toggle('sidebar-expanded', !expanded);
+  localStorage.setItem('kvSidebar', expanded ? 'collapsed' : 'expanded');
 }
 
 function renderHeader(title) {
