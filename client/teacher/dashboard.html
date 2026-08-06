@@ -54,31 +54,6 @@ renderPage('Dashboard');
 
 const STATUS_BADGE = { draft: 'badge-gray', submitted: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', revision: 'badge-yellow' };
 
-function sparklinePath(values, w = 80, h = 32) {
-  if (!values || values.length < 2) return '';
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const points = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * (w - 4) + 2;
-    const y = h - 4 - ((v - min) / range) * (h - 8);
-    return `${x},${y}`;
-  });
-  return points.join(' ');
-}
-
-function sparklineTrend(values) {
-  if (!values || values.length < 2) return { direction: 'neutral', change: '0%' };
-  const first = values[0];
-  const last = values[values.length - 1];
-  const diff = last - first;
-  const pct = first === 0 ? 0 : ((diff / first) * 100).toFixed(2);
-  return {
-    direction: diff > 0 ? 'positive' : diff < 0 ? 'negative' : 'neutral',
-    change: (diff > 0 ? '+' : '') + pct + '%'
-  };
-}
-
 let githubRepos = [];
 
 async function load() {
@@ -100,55 +75,23 @@ async function load() {
     else if (g.status === 'approved') stats.approved++;
   });
 
-  const sparkData = [12, 19, 15, 22, 18, 24, 20];
-  const trend = sparklineTrend(sparkData);
+  const statCards = [
+    { label: 'Groups', value: stats.groups, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' },
+    { label: 'Students', value: stats.total, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' },
+    { label: 'Pending Review', value: stats.pending, danger: stats.pending > 0, icon: '<path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>' },
+    { label: 'Approved', value: stats.approved, icon: '<polyline points="20 6 9 17 4 12"/>' },
+  ];
 
-  document.getElementById('statCards').innerHTML = `
-    <div class="stat-card animate-in">
-      <div class="stat-label">Groups</div>
-      <div class="stat-value">${stats.groups}</div>
-      <div class="stat-trend ${trend.direction}">${trend.change}</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath(sparkData)}"/>
-      </svg>
+  document.getElementById('statCards').innerHTML = statCards.map(c => `
+    <div class="stat-card animate-in ${c.danger ? 'stat-card-danger' : ''}">
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-value">${c.value}</div>
+      ${c.danger ? '<div class="stat-trend negative">needs action</div>' : ''}
       <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${c.icon}</svg>
       </div>
     </div>
-    <div class="stat-card animate-in">
-      <div class="stat-label">Students</div>
-      <div class="stat-value">${stats.total}</div>
-      <div class="stat-trend positive">+2.45%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([8, 12, 10, 16, 14, 18, 20])}"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      </div>
-    </div>
-    <div class="stat-card accent animate-in">
-      <div class="stat-label">Pending Review</div>
-      <div class="stat-value">${stats.pending}</div>
-      <div class="stat-trend negative">-4.75%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([20, 18, 22, 16, 14, 12, 10])}"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/></svg>
-      </div>
-    </div>
-    <div class="stat-card animate-in">
-      <div class="stat-label">Approved</div>
-      <div class="stat-value">${stats.approved}</div>
-      <div class="stat-trend positive">+12.5%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([5, 8, 6, 12, 10, 14, 16])}"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-      </div>
-    </div>
-  `;
+  `).join('');
 
   renderActivity(groups, githubRepos);
 

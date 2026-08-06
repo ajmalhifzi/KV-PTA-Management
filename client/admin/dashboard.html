@@ -36,6 +36,10 @@ if (user.role !== 'admin') redirectByRole(user.role);
 renderPage('Overview');
 
 async function load() {
+  const skeletonCards = document.getElementById('statCards');
+  const skeletonTbody = document.querySelector('#teachersTable tbody');
+  skeletonCards.innerHTML = Array(6).fill('<div class="stat-card"><div class="skeleton skeleton-stat" style="margin-bottom:8px"></div><div class="skeleton skeleton-stat" style="width:50%"></div></div>').join('');
+  skeletonTbody.innerHTML = Array(3).fill('<tr><td colspan="2"><div class="skeleton skeleton-row"></div></td></tr>').join('');
   const data = await get('/api/admin/overview');
 
   const stats = {};
@@ -43,63 +47,30 @@ async function load() {
   const projects = {};
   data.project_stats.forEach(s => projects[s.status] = s.count);
 
-document.getElementById('statCards').innerHTML = `
-    <div class="stat-card animate-in">
-      <div class="stat-label">Teachers</div>
-      <div class="stat-value">${stats.teacher || 0}</div>
-      <div class="stat-trend positive">+8.3%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,24 12,20 22,22 32,14 42,16 52,8 62,10 72,6"/>
-      </svg>
+const totalUsers = (stats.admin || 0) + (stats.teacher || 0) + (stats.student || 0);
+  const studentsAssigned = data.teachers.reduce((sum, t) => sum + (t.student_count || 0), 0);
+  const unassignedStudents = Math.max(0, (stats.student || 0) - studentsAssigned);
+  const reviewed = (projects.approved || 0) + (projects.rejected || 0) + (projects.revision || 0);
+
+  const statCards = [
+    { label: 'Total Users', value: totalUsers, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+    { label: 'Teachers', value: stats.teacher || 0, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+    { label: 'Unassigned Students', value: unassignedStudents, danger: unassignedStudents > 0, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>' },
+    { label: 'Pending Reviews', value: projects.submitted || 0, icon: '<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>' },
+    { label: 'Reviewed', value: reviewed, icon: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
+    { label: 'Groups', value: data.group_count || 0, icon: '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>' },
+  ];
+
+  document.getElementById('statCards').innerHTML = statCards.map(c => `
+    <div class="stat-card animate-in ${c.danger ? 'stat-card-danger' : ''}">
+      <div class="stat-label">${c.label}</div>
+      <div class="stat-value">${c.value}</div>
+      ${c.danger ? '<div class="stat-trend negative">needs action</div>' : ''}
       <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${c.icon}</svg>
       </div>
     </div>
-    <div class="stat-card animate-in">
-      <div class="stat-label">Students</div>
-      <div class="stat-value">${stats.student || 0}</div>
-      <div class="stat-trend positive">+12.5%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,26 12,20 22,22 32,14 42,10 52,12 62,6 72,8"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-      </div>
-    </div>
-    <div class="stat-card accent animate-in">
-      <div class="stat-label">Pending Reviews</div>
-      <div class="stat-value">${projects.submitted || 0}</div>
-      <div class="stat-trend negative">-4.2%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,4 12,8 22,6 32,12 42,14 52,18 62,16 72,20"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-      </div>
-    </div>
-    <div class="stat-card animate-in">
-      <div class="stat-label">Reviewed</div>
-      <div class="stat-value">${(projects.approved || 0) + (projects.rejected || 0) + (projects.revision || 0)}</div>
-      <div class="stat-trend positive">+5.1%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,20 12,16 22,18 32,10 42,8 52,12 62,4 72,6"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-      </div>
-    </div>
-    <div class="stat-card animate-in">
-      <div class="stat-label">Groups</div>
-      <div class="stat-value">${data.group_count || 0}</div>
-      <div class="stat-trend positive">+3.7%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,22 12,18 22,20 32,12 42,14 52,8 62,10 72,4"/>
-      </svg>
-      <div class="stat-icon-float">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-      </div>
-    </div>
-  `;
+  `).join('');
 
   const statusColors = { draft: 'var(--text-muted)', submitted: 'var(--yellow)', approved: 'var(--green)', rejected: 'var(--red)', revision: 'var(--yellow)' };
   const statusLabels = { draft: 'Draft', submitted: 'Submitted', approved: 'Approved', rejected: 'Rejected', revision: 'Revision' };

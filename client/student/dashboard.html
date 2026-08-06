@@ -38,19 +38,6 @@ renderPage('Dashboard');
 
 const STATUS_BADGE = { draft: 'badge-gray', submitted: 'badge-yellow', approved: 'badge-green', rejected: 'badge-red', revision: 'badge-yellow' };
 
-function sparklinePath(values, w = 80, h = 32) {
-  if (!values || values.length < 2) return '';
-  const max = Math.max(...values);
-  const min = Math.min(...values);
-  const range = max - min || 1;
-  const points = values.map((v, i) => {
-    const x = (i / (values.length - 1)) * (w - 4) + 2;
-    const y = h - 4 - ((v - min) / range) * (h - 8);
-    return `${x},${y}`;
-  });
-  return points.join(' ');
-}
-
 function timeAgo(val) {
   if (!val) return '';
   const diff = Date.now() - new Date(val).getTime();
@@ -88,9 +75,6 @@ async function load() {
       <div class="stat-label">Group</div>
       <div class="stat-value">${group ? escapeHtml(group.group_name) : '—'}</div>
       <div class="stat-trend neutral">${group ? 'Assigned' : 'None'}</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([3, 5, 4, 6, 5, 7, 6])}"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       </div>
@@ -99,9 +83,6 @@ async function load() {
       <div class="stat-label">Project</div>
       <div class="stat-value" style="font-size:20px">${project ? escapeHtml(project.title) : '—'}</div>
       <div class="stat-trend ${project ? 'positive' : 'neutral'}">${project ? 'Active' : 'No project yet'}</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([4, 6, 5, 8, 7, 9, 8])}"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       </div>
@@ -110,9 +91,6 @@ async function load() {
       <div class="stat-label">Status</div>
       <div class="stat-value"><span class="badge ${STATUS_BADGE[status] || 'badge-gray'}">${statusLabel}</span></div>
       <div class="stat-trend ${project && project.status === 'approved' ? 'positive' : 'neutral'}">${project && project.status === 'approved' ? 'Approved' : project ? 'In review' : 'Not started'}</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([5, 4, 6, 5, 7, 6, 8])}"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
       </div>
@@ -121,9 +99,6 @@ async function load() {
       <div class="stat-label">GitHub</div>
       <div class="stat-value" style="font-size:20px">${githubLabel}</div>
       <div class="stat-trend ${githubStatus.connected ? 'positive' : 'neutral'}">${githubStatus.connected ? 'Connected' : 'Connect to link repo'}</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="${sparklinePath([2, 3, 5, 4, 6, 8, 9])}"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       </div>

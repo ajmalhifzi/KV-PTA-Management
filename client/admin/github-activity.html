@@ -52,16 +52,16 @@ function extractRepoName(msg) {
 }
 
 async function load() {
+  const skeletonCards = document.getElementById('statCards');
+  const skeletonConn = document.getElementById('connectionsList');
+  skeletonCards.innerHTML = Array(4).fill('<div class="skeleton skeleton-stat"></div>').join('');
+  skeletonConn.innerHTML = Array(3).fill('<tr><td colspan="6"><div class="skeleton skeleton-row"></div></td></tr>').join('');
   const data = await get('/api/admin/github-activity');
 
 document.getElementById('statCards').innerHTML = `
     <div class="stat-card animate-in">
       <div class="stat-label">Connected Students</div>
       <div class="stat-value">${data.summary.connected_students}</div>
-      <div class="stat-trend positive">+15.2%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,24 12,20 22,22 32,14 42,16 52,8 62,10 72,6"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
       </div>
@@ -69,10 +69,6 @@ document.getElementById('statCards').innerHTML = `
     <div class="stat-card animate-in">
       <div class="stat-label">Linked Repos</div>
       <div class="stat-value">${data.summary.linked_repos}</div>
-      <div class="stat-trend positive">+22.1%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,26 12,20 22,22 32,14 42,10 52,12 62,6 72,8"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
       </div>
@@ -80,10 +76,6 @@ document.getElementById('statCards').innerHTML = `
     <div class="stat-card accent animate-in">
       <div class="stat-label">Commits (7d)</div>
       <div class="stat-value">${data.summary.active_last_7d}</div>
-      <div class="stat-trend positive">+63.4%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,20 12,16 22,18 32,10 42,12 52,4 62,6 72,2"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
       </div>
@@ -91,10 +83,6 @@ document.getElementById('statCards').innerHTML = `
     <div class="stat-card animate-in">
       <div class="stat-label">Teachers Engaged</div>
       <div class="stat-value">${data.summary.teachers_with_engagement}</div>
-      <div class="stat-trend positive">+9.8%</div>
-      <svg class="stat-sparkline" viewBox="0 0 80 32">
-        <polyline fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="2,22 12,18 22,20 32,12 42,14 52,8 62,10 72,4"/>
-      </svg>
       <div class="stat-icon-float">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
       </div>

@@ -354,6 +354,15 @@ body.sidebar-expanded .nav-item .nav-tooltip { display: none; }
   border-left: 4px solid var(--primary);
 }
 
+.stat-card-danger {
+  border-left: 4px solid var(--red);
+}
+
+.stat-card-danger .stat-icon-float {
+  background: var(--red-light);
+  color: var(--red);
+}
+
 .stat-label {
   font-size: 11px;
   font-weight: 600;
