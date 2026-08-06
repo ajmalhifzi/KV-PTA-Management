@@ -32,7 +32,7 @@
     <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px" id="confirmText"></p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
-      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+      <button class="btn btn-primary" style="background:var(--red)" id="confirmBtn">Delete</button>
     </div>
   </div>
 </div>
@@ -109,7 +109,7 @@ async function load() {
     badgeClass: u.category === 'formal' ? 'badge-blue' : 'badge-gray',
     badgeLabel: u.category,
     emptyMsg: 'No uploads',
-    deleteBtn: '<button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9;flex-shrink:0;font-size:11px;padding:3px 8px" onclick="deleteUpload(\'' + u.id + '\')">Delete</button>'
+    deleteBtn: '<button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light);flex-shrink:0;font-size:11px;padding:3px 8px" onclick="deleteUpload(\'' + u.id + '\')">Delete</button>'
   }));
 
   document.getElementById('resourcesContainer').innerHTML = renderDateSections(resources, r => ({
@@ -118,7 +118,7 @@ async function load() {
     badgeClass: 'badge-blue',
     badgeLabel: r.file_type || '-',
     emptyMsg: 'No resources',
-    deleteBtn: '<button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9;flex-shrink:0;font-size:11px;padding:3px 8px" onclick="deleteResource(\'' + r.id + '\')">Delete</button>'
+    deleteBtn: '<button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light);flex-shrink:0;font-size:11px;padding:3px 8px" onclick="deleteResource(\'' + r.id + '\')">Delete</button>'
   }));
 }
 

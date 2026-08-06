@@ -11,8 +11,8 @@
   .photo-lightbox.open { opacity:1;pointer-events:all }
   .photo-lightbox img { max-width:min(92vw,1100px);max-height:80vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5) }
   .photo-lightbox-stage { display:flex;flex-direction:column;align-items:center;gap:12px }
-  .photo-lightbox-caption { font-size:14px;color:#e9ecef;text-align:center;max-width:min(92vw,1100px) }
-  .photo-lightbox-counter { font-size:12px;color:#adb5bd }
+  .photo-lightbox-caption { font-size:14px;color:var(--border);text-align:center;max-width:min(92vw,1100px) }
+  .photo-lightbox-counter { font-size:12px;color:var(--text-muted) }
   .photo-lightbox-close { position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center }
   .photo-lightbox-close:hover { background:rgba(255,255,255,.25) }
   .photo-lightbox-nav { position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s }
@@ -104,7 +104,7 @@ function renderPhotos() {
           ${group.map(p => {
           return `
             <div style="position:relative;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-card)">
-              <div style="height:110px;display:flex;align-items:center;justify-content:center;background:#f5f7fb;overflow:hidden;cursor:pointer" onclick="openLightboxAt(${photos.indexOf(p)})">
+              <div style="height:110px;display:flex;align-items:center;justify-content:center;background:var(--bg-soft);overflow:hidden;cursor:pointer" onclick="openLightboxAt(${photos.indexOf(p)})">
                 <img src="/api/files/photos/${p.id}" alt="${escapeHtml(p.caption || 'photo')}" style="max-width:100%;max-height:110px;object-fit:contain" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:11px;color:var(--text-muted)&quot;>Unavailable</p>'">
               </div>
               <div style="padding:8px 10px">

@@ -11,8 +11,8 @@
   .photo-lightbox.open { opacity:1;pointer-events:all }
   .photo-lightbox img { max-width:min(92vw,1100px);max-height:80vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5) }
   .photo-lightbox-stage { display:flex;flex-direction:column;align-items:center;gap:12px }
-  .photo-lightbox-caption { font-size:14px;color:#e9ecef;text-align:center;max-width:min(92vw,1100px) }
-  .photo-lightbox-counter { font-size:12px;color:#adb5bd }
+  .photo-lightbox-caption { font-size:14px;color:var(--border);text-align:center;max-width:min(92vw,1100px) }
+  .photo-lightbox-counter { font-size:12px;color:var(--text-muted) }
   .photo-lightbox-close { position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center }
   .photo-lightbox-close:hover { background:rgba(255,255,255,.25) }
   .photo-lightbox-nav { position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s }
@@ -128,7 +128,7 @@ function renderPhotos() {
           const canDelete = p.uploader_id === user.id;
           return `
             <div style="position:relative;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-card)">
-              <div style="height:110px;display:flex;align-items:center;justify-content:center;background:#f5f7fb;overflow:hidden;cursor:pointer" onclick="openLightboxAt(${photos.indexOf(p)})">
+              <div style="height:110px;display:flex;align-items:center;justify-content:center;background:var(--bg-soft);overflow:hidden;cursor:pointer" onclick="openLightboxAt(${photos.indexOf(p)})">
                 <img src="/api/files/photos/${p.id}" alt="${escapeHtml(p.caption || 'photo')}" style="max-width:100%;max-height:110px;object-fit:contain" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:11px;color:var(--text-muted)&quot;>Unavailable</p>'">
               </div>
               ${canDelete ? `
@@ -193,11 +193,11 @@ async function uploadPhoto() {
   const input = document.getElementById('photoFileInput');
   const projectId = document.getElementById('photoProject').value;
   const msg = document.getElementById('photoMsg');
-  if (!projectId) { msg.style.display = 'block'; msg.style.color = '#c92a2a'; msg.textContent = 'Please select a project first.'; return; }
-  if (!input.files || !input.files[0]) { msg.style.display = 'block'; msg.style.color = '#c92a2a'; msg.textContent = 'Please choose a photo file.'; return; }
+  if (!projectId) { msg.style.display = 'block'; msg.style.color = 'var(--red)'; msg.textContent = 'Please select a project first.'; return; }
+  if (!input.files || !input.files[0]) { msg.style.display = 'block'; msg.style.color = 'var(--red)'; msg.textContent = 'Please choose a photo file.'; return; }
   const file = input.files[0];
   if (file.size > 10 * 1024 * 1024) {
-    msg.style.display = 'block'; msg.style.color = '#c92a2a';
+    msg.style.display = 'block'; msg.style.color = 'var(--red)';
     msg.textContent = 'Photo too large. Max 10MB.';
     input.value = '';
     return;
@@ -206,7 +206,7 @@ async function uploadPhoto() {
   const reader = new FileReader();
   reader.onload = async function(e) {
     try {
-      msg.style.display = 'block'; msg.style.color = '#2b8a3e'; msg.textContent = 'Uploading...';
+      msg.style.display = 'block'; msg.style.color = 'var(--green)'; msg.textContent = 'Uploading...';
       await post('/api/student/project-photos', {
         project: projectId,
         caption: caption,
@@ -217,7 +217,7 @@ async function uploadPhoto() {
       msg.style.display = 'none';
       await load();
     } catch (err) {
-      msg.style.display = 'block'; msg.style.color = '#c92a2a'; msg.textContent = err.message;
+      msg.style.display = 'block'; msg.style.color = 'var(--red)'; msg.textContent = err.message;
     }
   };
   reader.readAsDataURL(file);

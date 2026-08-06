@@ -79,7 +79,7 @@
     <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px" id="confirmText"></p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
-      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+      <button class="btn btn-primary" style="background:var(--red)" id="confirmBtn">Delete</button>
     </div>
   </div>
 </div>
@@ -291,8 +291,8 @@ function renderMeetingCard(m) {
           ${nextDate ? '<div style="font-size:11px;color:var(--text-secondary)">Next meeting: ' + nextDate + '</div>' : ''}
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-sm" style="background:#fff;border:1px solid var(--border)" onclick="editMeeting('${m.id}')">Edit</button>
-          <button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="confirmDelete('${m.id}')">Delete</button>
+          <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border)" onclick="editMeeting('${m.id}')">Edit</button>
+          <button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light)" onclick="confirmDelete('${m.id}')">Delete</button>
         </div>
       </div>
     </div>
@@ -314,13 +314,13 @@ async function createMeeting() {
   const nextMeetingTime = document.getElementById('nextMeetingTime').value;
   const msg = document.getElementById('formMsg');
 
-  if (!groupId) { msg.textContent = 'Select a group'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
-  if (!meetingDate) { msg.textContent = 'Select meeting date'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
-  if (!notes) { msg.textContent = 'Enter meeting notes'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!groupId) { msg.textContent = 'Select a group'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
+  if (!meetingDate) { msg.textContent = 'Select meeting date'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
+  if (!notes) { msg.textContent = 'Enter meeting notes'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
 
   const groupOpt = document.querySelector(`#groupSelect option[value="${groupId}"]`);
   const projectId = groupOpt ? groupOpt.dataset.project : null;
-  if (!projectId) { msg.textContent = 'Group has no project'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!projectId) { msg.textContent = 'Group has no project'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
 
   msg.style.display = 'none';
 
@@ -341,12 +341,12 @@ async function createMeeting() {
     document.getElementById('nextMeetingTime').value = '';
     document.getElementById('nextLabel').textContent = 'Next meeting';
     msg.textContent = 'Meeting log saved!';
-    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+    msg.style.color = 'var(--green)'; msg.style.display = 'block';
     load();
     setTimeout(() => msg.style.display = 'none', 2000);
   } catch (err) {
     msg.textContent = err.message;
-    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+    msg.style.color = 'var(--red)'; msg.style.display = 'block';
   }
 }
 
@@ -395,9 +395,9 @@ async function saveEditMeeting() {
   const nextMeetingTime = document.getElementById('editNextMeetingTime').value;
   const msg = document.getElementById('editFormMsg');
 
-  if (!groupId) { msg.textContent = 'Select a group'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
-  if (!meetingDate) { msg.textContent = 'Select meeting date'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
-  if (!notes) { msg.textContent = 'Enter meeting notes'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!groupId) { msg.textContent = 'Select a group'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
+  if (!meetingDate) { msg.textContent = 'Select meeting date'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
+  if (!notes) { msg.textContent = 'Enter meeting notes'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
 
   msg.style.display = 'none';
 
@@ -413,7 +413,7 @@ async function saveEditMeeting() {
     load();
   } catch (err) {
     msg.textContent = err.message;
-    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+    msg.style.color = 'var(--red)'; msg.style.display = 'block';
   }
 }
 

@@ -58,7 +58,7 @@
     <p style="font-size:14px;color:var(--text-secondary);margin-bottom:16px" id="confirmText"></p>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeConfirm()">Cancel</button>
-      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+      <button class="btn btn-primary" style="background:var(--red)" id="confirmBtn">Delete</button>
     </div>
   </div>
 </div>
@@ -87,7 +87,7 @@ async function load() {
         <td style="color:var(--text-muted);font-size:13px">${new Date(g.created_at).toLocaleDateString()}</td>
         <td>
           <button class="btn btn-soft btn-sm" onclick="showAssignModal('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Assign</button>
-          <button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="confirmDelete('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Delete</button>
+          <button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light)" onclick="confirmDelete('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Delete</button>
         </td>
       </tr>
     `).join('');
@@ -110,14 +110,14 @@ async function handleCreate() {
   const group_name = document.getElementById('newGroupName').value.trim();
   const teacher_id = document.getElementById('newGroupTeacher').value;
   const msg = document.getElementById('createMsg');
-  if (!group_name) { msg.textContent = 'Group name required'; msg.style.color = '#c92a2a'; msg.style.display = 'block'; return; }
+  if (!group_name) { msg.textContent = 'Group name required'; msg.style.color = 'var(--red)'; msg.style.display = 'block'; return; }
   try {
     await post('/api/admin/groups', { group_name, teacher_id });
     closeCreateModal();
     load();
   } catch (e) {
     msg.textContent = e.message;
-    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+    msg.style.color = 'var(--red)'; msg.style.display = 'block';
   }
 }
 
@@ -157,11 +157,11 @@ async function handleAssign() {
       body: JSON.stringify({ student_ids }),
     });
     msg.textContent = 'Students assigned!';
-    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+    msg.style.color = 'var(--green)'; msg.style.display = 'block';
     setTimeout(() => { closeAssignModal(); load(); }, 1000);
   } catch (e) {
     msg.textContent = e.message;
-    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+    msg.style.color = 'var(--red)'; msg.style.display = 'block';
   }
 }
 

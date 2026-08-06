@@ -9,8 +9,8 @@
 <style>
   textarea.form-input { resize:vertical }
   .field-label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:4px }
-  .msg-success { font-size:13px;color:#2b8a3e;margin-bottom:8px }
-  .msg-error { font-size:13px;color:#c92a2a;margin-bottom:8px }
+  .msg-success { font-size:13px;color:var(--green);margin-bottom:8px }
+  .msg-error { font-size:13px;color:var(--red);margin-bottom:8px }
   .modal-overlay { position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px }
 </style>
 </head>
@@ -79,7 +79,7 @@ async function load() {
     }).join('');
   } catch (e) {
     document.getElementById('projectListContainer').innerHTML =
-      '<div class="card" style="text-align:center;padding:32px"><p style="font-size:13px;color:#c92a2a">' + escapeHtml(e.message || 'Failed to load projects') + '</p></div>';
+      '<div class="card" style="text-align:center;padding:32px"><p style="font-size:13px;color:var(--red)">' + escapeHtml(e.message || 'Failed to load projects') + '</p></div>';
   }
 }
 

@@ -42,7 +42,7 @@
     <div id="confirmMsg" style="font-size:13px;margin-bottom:8px;display:none"></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
-      <button class="btn btn-primary" style="background:#c92a2a" id="confirmBtn">Delete</button>
+      <button class="btn btn-primary" style="background:var(--red)" id="confirmBtn">Delete</button>
     </div>
   </div>
 </div>
@@ -70,7 +70,7 @@ async function load() {
         <td style="color:var(--text-muted);font-size:13px">${new Date(u.created_at).toLocaleDateString()}</td>
         <td>
           <button class="btn btn-soft btn-sm" onclick="openEdit('${u.id}','${u.full_name.replace(/'/g,"\\'")}','${u.email}','${u.role}')">Edit</button>
-          <button class="btn btn-sm" style="background:#fff;color:#c92a2a;border:1px solid #ffc9c9" onclick="confirmDelete('${u.id}','${u.full_name.replace(/'/g,"\\'")}')">Delete</button>
+          <button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light)" onclick="confirmDelete('${u.id}','${u.full_name.replace(/'/g,"\\'")}')">Delete</button>
         </td>
       </tr>
     `).join('');
@@ -106,12 +106,12 @@ async function handleUpdate() {
   try {
     await api('/api/admin/users/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
     msg.textContent = 'Updated!';
-    msg.style.color = '#2b8a3e'; msg.style.display = 'block';
+    msg.style.color = 'var(--green)'; msg.style.display = 'block';
     closeEditModal();
     load();
   } catch (e) {
     msg.textContent = e.message;
-    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+    msg.style.color = 'var(--red)'; msg.style.display = 'block';
   }
 }
 
@@ -136,7 +136,7 @@ async function handleDelete() {
     load();
   } catch (e) {
     msg.textContent = e.message;
-    msg.style.color = '#c92a2a'; msg.style.display = 'block';
+    msg.style.color = 'var(--red)'; msg.style.display = 'block';
   }
 }
 

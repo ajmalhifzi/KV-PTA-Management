@@ -40,11 +40,11 @@ async function handleSeed() {
     if (!Array.isArray(data)) throw new Error('Must be a JSON array');
     const result = await post('/api/admin/seed-fyp', { data });
     msg.textContent = result.message;
-    msg.style.color = '#2b8a3e';
+    msg.style.color = 'var(--green)';
     msg.style.display = 'block';
   } catch (e) {
     msg.textContent = e.message;
-    msg.style.color = '#c92a2a';
+    msg.style.color = 'var(--red)';
     msg.style.display = 'block';
   }
 }
