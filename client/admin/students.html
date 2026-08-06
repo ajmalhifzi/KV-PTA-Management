@@ -17,6 +17,10 @@
         <span style="font-weight:600;font-size:14px;color:var(--text-primary)">All Students</span>
         <a class="btn btn-primary btn-sm" href="/admin/groups.html">Manage Groups</a>
       </div>
+      <div style="padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap" id="studentFilters">
+        <button class="filter-chip active" data-filter="all" onclick="filterStudents('all')">All</button>
+        <button class="filter-chip" data-filter="unassigned" onclick="filterStudents('unassigned')">Unassigned</button>
+      </div>
       <div class="table-wrapper"><table><thead><tr><th>Name</th><th>Email</th><th>Group</th><th>Teacher</th><th>Joined</th></tr></thead><tbody id="studentsList"></tbody></table></div>
     </div>
   </div>
@@ -30,12 +34,19 @@ const user = requireAuth();
 if (user.role !== 'admin') redirectByRole(user.role);
 renderPage('Students');
 
-async function load() {
-  const students = await get('/api/admin/students');
+let allStudents = [];
+let studentFilter = 'all';
 
+async function load() {
+  allStudents = await get('/api/admin/students');
+  renderStudents();
+}
+
+function renderStudents() {
   const tbody = document.getElementById('studentsList');
+  const students = studentFilter === 'unassigned' ? allStudents.filter(s => !s.group_id) : allStudents;
   if (students.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No students registered</p></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No students found</p></td></tr>';
   } else {
     tbody.innerHTML = students.map(s => `
       <tr>
@@ -47,6 +58,12 @@ async function load() {
       </tr>
     `).join('');
   }
+}
+
+function filterStudents(f) {
+  studentFilter = f;
+  document.querySelectorAll('#studentFilters .filter-chip').forEach(c => c.classList.toggle('active', c.dataset.filter === f));
+  renderStudents();
 }
 load();
 </script>

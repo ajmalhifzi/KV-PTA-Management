@@ -17,7 +17,7 @@
         <span style="font-weight:600;font-size:14px;color:var(--text-primary)">Groups</span>
         <button class="btn btn-primary btn-sm" onclick="showCreateModal()">+ New Group</button>
       </div>
-      <div class="table-wrapper"><table><thead><tr><th>Group Name</th><th>Teacher</th><th>Students</th><th>Created</th><th style="width:140px">Actions</th></tr></thead><tbody id="groupsList"></tbody></table></div>
+      <div class="group-grid" id="groupsList" style="padding:16px"></div>
     </div>
   </div>
 </div>
@@ -75,21 +75,26 @@ let deleteTargetId = null;
 
 async function load() {
   const groups = await get('/api/admin/groups');
-  const tbody = document.getElementById('groupsList');
+  const container = document.getElementById('groupsList');
   if (groups.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="empty-state" style="padding:32px"><p>No groups yet</p></td></tr>';
+    container.innerHTML = '<div class="empty-state" style="padding:32px;width:100%;text-align:center"><p>No groups yet</p></div>';
   } else {
-    tbody.innerHTML = groups.map(g => `
-      <tr>
-        <td style="font-weight:600;color:var(--primary)">${g.group_name}</td>
-        <td>${g.teacher_name}</td>
-        <td><span class="badge badge-blue">${g.student_count} students</span></td>
-        <td style="color:var(--text-muted);font-size:13px">${new Date(g.created_at).toLocaleDateString()}</td>
-        <td>
-          <button class="btn btn-soft btn-sm" onclick="showAssignModal('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Assign</button>
+    container.innerHTML = groups.map(g => `
+      <div class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <span style="font-weight:700;font-size:15px;color:var(--primary)">${g.group_name}</span>
+          <span class="badge badge-blue">${g.student_count} students</span>
+        </div>
+        <div style="font-size:13px;color:var(--text-secondary);display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          ${g.teacher_name || '<span style="color:var(--text-muted)">No teacher assigned</span>'}
+        </div>
+        <div style="font-size:12px;color:var(--text-muted)">Created ${new Date(g.created_at).toLocaleDateString()}</div>
+        <div style="display:flex;gap:8px;margin-top:4px">
+          <button class="btn btn-soft btn-sm" onclick="showAssignModal('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Assign Students</button>
           <button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light)" onclick="confirmDelete('${g.id}','${g.group_name.replace(/'/g,"\\'")}')">Delete</button>
-        </td>
-      </tr>
+        </div>
+      </div>
     `).join('');
   }
 }
