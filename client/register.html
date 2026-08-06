@@ -36,10 +36,17 @@
         </div>
         <div class="form-group">
           <label class="form-label">Role</label>
-          <select class="form-input" id="role">
-            <option value="student">Student</option>
-            <option value="teacher">Teacher</option>
-          </select>
+          <div class="segmented" id="roleSeg">
+            <button type="button" class="segmented-btn active" data-role="student" onclick="selectRole('student')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              Student
+            </button>
+            <button type="button" class="segmented-btn" data-role="teacher" onclick="selectRole('teacher')">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+              Teacher
+            </button>
+          </div>
+          <input type="hidden" id="role" value="student">
         </div>
         <div id="errorMsg" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
         <button class="btn btn-primary" onclick="handleRegister()">Create Account</button>
@@ -58,6 +65,11 @@
 <script>
 const user = getUser();
 if (user) { redirectByRole(user.role); }
+
+function selectRole(role) {
+  document.querySelectorAll('#roleSeg .segmented-btn').forEach(b => b.classList.toggle('active', b.dataset.role === role));
+  document.getElementById('role').value = role;
+}
 
 async function handleRegister() {
   const full_name = document.getElementById('full_name').value;
