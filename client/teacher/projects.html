@@ -6,24 +6,6 @@
 <title>Projects - KV PTA Management</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="/css/style.css">
-<style>
-  .field-label { display:block;font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:2px }
-  .field-value { font-size:14px;color:var(--text-primary);margin-bottom:12px }
-  .photo-lightbox { position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .2s }
-  .photo-lightbox.open { opacity:1;pointer-events:all }
-  .photo-lightbox img { max-width:min(92vw,1100px);max-height:80vh;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5) }
-  .photo-lightbox-stage { display:flex;flex-direction:column;align-items:center;gap:12px }
-  .photo-lightbox-caption { font-size:14px;color:var(--border);text-align:center;max-width:min(92vw,1100px) }
-  .photo-lightbox-counter { font-size:12px;color:var(--text-muted) }
-  .photo-lightbox-close { position:absolute;top:18px;right:22px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:24px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center }
-  .photo-lightbox-close:hover { background:rgba(255,255,255,.25) }
-  .photo-lightbox-nav { position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;border:none;background:rgba(255,255,255,.12);color:#fff;font-size:30px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s }
-  .photo-lightbox-nav:hover { background:rgba(255,255,255,.25) }
-  .photo-lightbox-nav.prev { left:20px }
-  .photo-lightbox-nav.next { right:20px }
-  .photo-lightbox-nav.hidden { display:none }
-  .photo-day-label { font-size:11px;font-weight:600;color:var(--text-secondary);text-align:center;margin-top:6px }
-</style>
 </head>
 <body>
 <div id="sidebar" class="sidebar"></div>
@@ -31,46 +13,7 @@
   <div id="header" class="top-header"></div>
   <div class="content-area">
 
-    <div id="noProject" style="display:none"></div>
-
-    <div id="projectView" style="display:none">
-      <div style="margin-bottom:12px">
-        <a href="#" onclick="backToProjectList();return false" style="font-size:13px;color:var(--primary);text-decoration:none;display:inline-flex;align-items:center;gap:4px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-          Back to Projects
-        </a>
-      </div>
-      <div id="projectInfo" class="card" style="margin-bottom:16px">
-        <div id="projectInfoHeader"></div>
-        <div id="projectInfoBody" style="margin-top:16px"></div>
-        <div id="projectInfoActions" style="margin-top:16px;display:flex;gap:8px;align-items:center"></div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:16px;align-items:start">
-        <div id="githubCard" class="card" style="display:none">
-          <div id="githubCardContent"></div>
-        </div>
-        <div>
-          <div class="card" style="margin-bottom:16px;padding:16px">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-              <div style="font-size:13px;font-weight:600;color:var(--text-muted)">Photo Slider</div>
-              <span id="photoCount" class="badge badge-gray" style="font-size:10px;display:none"></span>
-            </div>
-            <div id="photoSlider"></div>
-          </div>
-          <div class="card" style="padding:16px">
-            <div style="font-size:14px;font-weight:600;color:var(--text-primary);margin-bottom:8px">Comment & Chat</div>
-            <div id="teacherChatList" style="font-size:13px;color:var(--text-muted);max-height:300px;overflow-y:auto;margin-bottom:10px">
-              <p>No messages yet.</p>
-            </div>
-            <div style="display:flex;gap:6px">
-              <input class="form-input" id="teacherChatInput" placeholder="Type a message..." style="flex:1;font-size:12px">
-              <button class="btn btn-primary btn-sm" onclick="addTeacherChatComment()" style="font-size:12px;white-space:nowrap">Send</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    <div id="projectList" style="display:none"></div>
 
   </div>
 </div>
@@ -83,467 +26,47 @@ const user = requireAuth();
 if (user.role !== 'teacher') redirectByRole(user.role);
 renderPage('Projects');
 
-let currentProjectId = null;
-
-function timeAgo(val) {
-  const diff = Date.now() - new Date(val).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return mins + 'm ago';
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return hrs + 'h ago';
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return days + 'd ago';
-  return new Date(val).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
-}
-
 function escapeHtml(s) {
   if (!s) return '';
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function getSelectedProjectId() {
-  const hash = window.location.hash.replace('#project-', '');
-  if (hash) return hash;
-  const stored = localStorage.getItem('viewProjectId');
-  if (stored) return stored;
-  return null;
-}
-
 async function load() {
-  const projectId = getSelectedProjectId();
-  if (!projectId) {
-    document.getElementById('projectView').style.display = 'none';
-    const container = document.getElementById('noProject');
-    container.style.display = 'block';
-    try {
-      const projects = await get('/api/teacher/projects');
-      if (!projects.length) {
-        container.innerHTML = '<div class="card" style="max-width:600px;text-align:center;padding:48px;margin:0 auto">' +
-          '<p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>' +
-          '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>' +
-          '<button class="btn btn-primary" onclick="window.location.href=\'/teacher/dashboard.html\'">Go to Dashboard</button></div>';
-      } else {
-        container.innerHTML = '<div style="max-width:700px;margin:0 auto">' +
-          '<h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">All Projects</h3>' +
-          projects.map(p => {
-            const badgeClass = p.status === 'approved' ? 'badge-green' : p.status === 'rejected' ? 'badge-red' : p.status === 'submitted' ? 'badge-yellow' : 'badge-gray';
-            return '<div class="card" style="cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" onclick="selectProject(\'' + p.id + '\')">' +
-              '<div><div style="font-size:15px;font-weight:600;color:var(--text-primary)">' + escapeHtml(p.title || '(Untitled)') + '</div>' +
-              '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">' + escapeHtml(p.group_name) + '</div></div>' +
-              '<span class="badge ' + badgeClass + '" style="font-size:11px">' + p.status + '</span></div>';
-          }).join('') + '</div>';
-      }
-    } catch {
+  const container = document.getElementById('projectList');
+  container.style.display = 'block';
+  container.innerHTML = '<div class="skeleton skeleton-stat" style="margin-bottom:12px"></div><div class="skeleton skeleton-stat" style="margin-bottom:12px"></div><div class="skeleton skeleton-stat"></div>';
+  try {
+    const projects = await get('/api/teacher/projects');
+    if (!projects.length) {
       container.innerHTML = '<div class="card" style="max-width:600px;text-align:center;padding:48px;margin:0 auto">' +
         '<p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>' +
         '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>' +
         '<button class="btn btn-primary" onclick="window.location.href=\'/teacher/dashboard.html\'">Go to Dashboard</button></div>';
+      return;
     }
-    return;
-  }
-
-  currentProjectId = projectId;
-
-  try {
-    const project = await get('/api/teacher/projects/' + projectId);
-    document.getElementById('noProject').style.display = 'none';
-    document.getElementById('projectView').style.display = 'block';
-    renderProjectInfo(project);
-    renderGitHub(project);
-    loadTeacherComments();
-    loadPhotoSlider();
+    container.innerHTML = '<div style="max-width:700px;margin:0 auto">' +
+      '<h3 style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:16px">All Projects</h3>' +
+      projects.map(p => {
+        const badgeClass = p.status === 'approved' ? 'badge-green' : p.status === 'rejected' ? 'badge-red' : p.status === 'submitted' ? 'badge-yellow' : 'badge-gray';
+        return '<div class="card" style="cursor:pointer;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between" onclick="selectProject(\'' + p.id + '\')">' +
+          '<div><div style="font-size:15px;font-weight:600;color:var(--text-primary)">' + escapeHtml(p.title || '(Untitled)') + '</div>' +
+          '<div style="font-size:12px;color:var(--text-secondary);margin-top:2px">' + escapeHtml(p.group_name) + '</div></div>' +
+          '<span class="badge ' + badgeClass + '" style="font-size:11px">' + p.status + '</span></div>';
+      }).join('') + '</div>';
   } catch {
-    document.getElementById('noProject').style.display = 'block';
-    document.getElementById('projectView').style.display = 'none';
+    container.innerHTML = '<div class="card" style="max-width:600px;text-align:center;padding:48px;margin:0 auto">' +
+      '<p style="font-size:16px;font-weight:600;color:var(--text-primary);margin-bottom:8px">No Projects Yet</p>' +
+      '<p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">No projects are assigned to you yet.</p>' +
+      '<button class="btn btn-primary" onclick="window.location.href=\'/teacher/dashboard.html\'">Go to Dashboard</button></div>';
   }
-}
-
-/* Photo Slider */
-
-let photoIndex = 0;
-let photos = [];
-
-async function loadPhotoSlider() {
-  if (!currentProjectId) return;
-  try {
-    const all = await get('/api/teacher/projects/' + currentProjectId + '/photos');
-    const todayKey = localDayKey(new Date());
-    if (all.some(p => localDayKey(p.uploaded_at) === todayKey)) {
-      photos = all.filter(p => localDayKey(p.uploaded_at) === todayKey);
-    } else {
-      photos = all.length ? all.filter(p => localDayKey(p.uploaded_at) === localDayKey(all.reduce((a, b) => new Date(a.uploaded_at) > new Date(b.uploaded_at) ? a : b).uploaded_at)) : [];
-    }
-    photoIndex = Math.max(0, photos.length - 1);
-    renderPhotoSlider();
-  } catch {
-    document.getElementById('photoSlider').innerHTML =
-      '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:8px">Could not load photos.</p>';
-  }
-}
-
-function renderPhotoSlider() {
-  const container = document.getElementById('photoSlider');
-  if (!container) return;
-  const count = document.getElementById('photoCount');
-  if (count) {
-    count.textContent = photos.length ? photos.length + (photos.length > 1 ? ' photos' : ' photo') : '';
-    count.style.display = photos.length ? 'inline-block' : 'none';
-  }
-  if (!photos.length) {
-    container.innerHTML = '<p style="font-size:12px;color:var(--text-muted);text-align:center;padding:12px">No project photos yet.</p>';
-    return;
-  }
-  const photo = photos[Math.min(photoIndex, photos.length - 1)];
-  const photoKey = localDayKey(photo.uploaded_at);
-  const dayCount = photos.filter(p => localDayKey(p.uploaded_at) === photoKey).length;
-  const dayLabel = photoDayLabel(photo.uploaded_at);
-  container.innerHTML = `
-    <div style="position:relative;border-radius:8px;overflow:hidden;background:var(--bg-card);border:1px solid var(--border-light)">
-      <div style="width:100%;height:190px;display:flex;align-items:center;justify-content:center;background:var(--bg-soft);overflow:hidden">
-        <img src="/api/files/photos/${photo.id}" alt="${escapeHtml(photo.caption || 'project photo')}"
-             title="Click to enlarge" onclick="openLightbox()" style="max-width:100%;max-height:190px;object-fit:contain;cursor:pointer" onerror="this.parentElement.innerHTML='<p style=&quot;font-size:12px;color:var(--text-muted)&quot;>Photo unavailable</p>'">
-      </div>
-      ${photos.length > 1 ? `
-      <button onclick="prevPhoto()" style="position:absolute;left:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);cursor:pointer;font-size:14px;color:var(--text-primary);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.15)">&lsaquo;</button>
-      <button onclick="nextPhoto()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--bg-card);cursor:pointer;font-size:14px;color:var(--text-primary);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 3px rgba(0,0,0,.15)">&rsaquo;</button>` : ''}
-    </div>
-    <div style="margin-top:8px;font-size:12px;color:var(--text-secondary);text-align:center;min-height:16px">${escapeHtml(photo.caption || '')}</div>
-    <div class="photo-day-label">${dayLabel} &middot; ${dayCount} photo${dayCount > 1 ? 's' : ''}</div>
-    ${photos.length > 1 ? `
-    <div style="display:flex;justify-content:center;gap:6px;margin-top:8px">
-      ${photos.map((p, i) => '<button onclick="goToPhoto(' + i + ')" style="width:8px;height:8px;border-radius:50%;border:none;cursor:pointer;padding:0;background:' + (i === photoIndex ? 'var(--primary)' : 'var(--border)') + '"></button>').join('')}
-    </div>` : ''}
-    <div style="margin-top:8px;font-size:11px;color:var(--text-muted);text-align:center">Uploaded by ${escapeHtml(photo.uploader_name || 'student')}</div>
-  `;
-}
-
-function localDayKey(d) {
-  const t = new Date(d);
-  return t.getFullYear() + '-' + (t.getMonth() + 1) + '-' + t.getDate();
-}
-
-function photoDayLabel(d) {
-  const t = new Date(d);
-  const today = new Date();
-  const startOfDay = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
-  const diff = Math.round((startOfDay(today) - startOfDay(t)) / 86400000);
-  if (diff === 0) return 'Today';
-  if (diff === 1) return 'Yesterday';
-  return t.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-function prevPhoto() {
-  photoIndex = (photoIndex - 1 + photos.length) % photos.length;
-  renderPhotoSlider();
-}
-
-function nextPhoto() {
-  photoIndex = (photoIndex + 1) % photos.length;
-  renderPhotoSlider();
-}
-
-function goToPhoto(i) {
-  photoIndex = i;
-  renderPhotoSlider();
-}
-
-function openLightbox() {
-  const lb = document.getElementById('photoLightbox');
-  if (!lb || !photos.length) return;
-  lb.classList.add('open');
-  document.body.style.overflow = 'hidden';
-  renderLightbox();
-}
-
-function closeLightbox() {
-  const lb = document.getElementById('photoLightbox');
-  if (!lb) return;
-  lb.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function renderLightbox() {
-  const lb = document.getElementById('photoLightbox');
-  if (!lb) return;
-  const photo = photos[Math.min(photoIndex, photos.length - 1)];
-  document.getElementById('lightboxImg').src = '/api/files/photos/' + photo.id;
-  document.getElementById('lightboxCaption').textContent = photo.caption || '';
-  document.getElementById('lightboxCounter').textContent = (photoIndex + 1) + ' / ' + photos.length;
-  const hasNav = photos.length > 1;
-  lb.querySelector('.photo-lightbox-nav.prev').classList.toggle('hidden', !hasNav);
-  lb.querySelector('.photo-lightbox-nav.next').classList.toggle('hidden', !hasNav);
-}
-
-function lightboxPrev() {
-  if (!photos.length) return;
-  photoIndex = (photoIndex - 1 + photos.length) % photos.length;
-  renderPhotoSlider();
-  renderLightbox();
-}
-
-function lightboxNext() {
-  if (!photos.length) return;
-  photoIndex = (photoIndex + 1) % photos.length;
-  renderPhotoSlider();
-  renderLightbox();
-}
-
-function renderProjectInfo(data) {
-  const status = data.status || 'draft';
-  const badgeClass = status === 'approved' ? 'badge-green' : status === 'rejected' ? 'badge-red' : status === 'submitted' ? 'badge-yellow' : 'badge-gray';
-  const students = data.students && data.students.length ? data.students.map(s => escapeHtml(s.full_name)).join(', ') : '';
-
-  document.getElementById('projectInfoHeader').innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:8px">
-      <div>
-        <h2 style="font-size:18px;font-weight:700;color:var(--text-primary)">${escapeHtml(data.title || '(No title)')}</h2>
-        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:4px;font-size:13px;color:var(--text-secondary)">
-          <span><strong style="color:var(--primary)">Group:</strong> ${escapeHtml(data.group_name)}</span>
-          ${students ? '<span><strong style="color:var(--primary)">Students:</strong> ' + students + '</span>' : ''}
-        </div>
-      </div>
-      <span class="badge ${badgeClass}" style="font-size:12px">${status}</span>
-    </div>
-  `;
-
-  document.getElementById('projectInfoBody').innerHTML = `
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div>
-        <div class="field-label">Objective</div>
-        <div class="field-value">${escapeHtml(data.objective || '-')}</div>
-      </div>
-      <div>
-        <div class="field-label">Purpose</div>
-        <div class="field-value">${escapeHtml(data.purpose || '-')}</div>
-      </div>
-    </div>
-    <div>
-      <div class="field-label">Scope</div>
-      <div class="field-value">${escapeHtml(data.scope || '-')}</div>
-    </div>
-  `;
-
-  const actions = document.getElementById('projectInfoActions');
-  actions.innerHTML = '';
-  if (status !== 'approved' && status !== 'rejected') {
-    actions.innerHTML = `
-      <button class="btn btn-primary btn-sm" onclick="updateStatus('approved')">Approve</button>
-      <button class="btn btn-soft btn-sm" onclick="updateStatus('revision')">Request Revision</button>
-      <button class="btn btn-secondary btn-sm" style="color:var(--red)" onclick="updateStatus('rejected')">Reject</button>
-    `;
-  }
-}
-
-async function updateStatus(status) {
-  if (!currentProjectId) return;
-  try {
-    await patch(`/api/teacher/projects/${currentProjectId}/status`, { status });
-    load();
-  } catch (e) { alert(e.message); }
 }
 
 function selectProject(id) {
   localStorage.setItem('viewProjectId', id);
-  window.location.hash = '#project-' + id;
-  load();
+  window.location.href = '/teacher/project-detail.html';
 }
 
-function backToProjectList() {
-  localStorage.removeItem('viewProjectId');
-  window.location.hash = '';
-  load();
-}
-
-/* GitHub */
-
-function renderGitHub(data) {
-  const card = document.getElementById('githubCard');
-  if (!data.id) { card.style.display = 'none'; return; }
-  card.style.display = 'block';
-
-  const content = document.getElementById('githubCardContent');
-  content.innerHTML = `
-    <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="var(--primary)"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
-      <span style="font-size:14px;font-weight:600;color:var(--text-primary)">GitHub Repository</span>
-    </div>
-    <div id="githubContent">
-      <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">Loading GitHub data...</div>
-    </div>
-  `;
-
-  loadTeacherGitHubData(data);
-}
-
-async function loadTeacherGitHubData(data) {
-  const content = document.getElementById('githubContent');
-  try {
-    const summary = await get('/api/github/repo-summary/' + data.id);
-    if (!summary.linked) {
-      content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">No GitHub repository linked to this project.</div>';
-      return;
-    }
-
-    let extraInfo = '';
-    if (summary.lastCommit) {
-      extraInfo += '<div style="margin-top:4px;font-size:12px;color:var(--text-muted)">Last commit: ' + new Date(summary.lastCommit.date).toLocaleString() + ' by ' + summary.lastCommit.author + '</div>';
-    }
-    if (summary.language) {
-      extraInfo += ' <span class="badge badge-blue" style="font-size:9px">' + summary.language + '</span>';
-    }
-    if (summary.private) {
-      extraInfo += ' <span class="badge badge-gray" style="font-size:9px">Private</span>';
-    }
-
-    content.innerHTML = `
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-        <a href="${summary.repoUrl}" target="_blank" style="font-size:14px;font-weight:600;color:var(--primary);text-decoration:none;display:flex;align-items:center;gap:4px">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          ${summary.fullName}
-        </a>
-        ${extraInfo}
-      </div>
-      <div id="commitArea" style="margin-top:10px"></div>
-    `;
-    loadTeacherCommits(data.id);
-  } catch {
-    content.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-muted);font-size:12px">Failed to load repo data.</div>';
-  }
-}
-
-async function loadTeacherCommits(projectId) {
-  try {
-    const commits = await get('/api/github/commits/' + projectId + '?limit=15');
-    const area = document.getElementById('commitArea');
-    if (!area) return;
-    if (!commits.length) { area.innerHTML = ''; return; }
-
-    area.innerHTML = '<div style="font-size:13px;font-weight:600;color:var(--primary);margin-bottom:6px">Recent Commits & Feedback</div>' +
-      '<div style="max-height:300px;overflow-y:auto">' +
-      commits.map(c => {
-        return '<div style="padding:7px 0;border-bottom:1px solid var(--border-light);font-size:13px">' +
-          '<div style="display:flex;align-items:flex-start;gap:5px">' +
-            '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" stroke-width="2" style="margin-top:3px;flex-shrink:0"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>' +
-            '<div style="flex:1">' +
-              '<a href="' + c.url + '" target="_blank" style="color:var(--primary);text-decoration:none;font-weight:500">' + c.message.split('\n')[0] + '</a>' +
-              '<div style="font-size:11px;color:var(--text-muted);margin-top:1px">' +
-                '<span>' + c.author + '</span> <span>&middot;</span> <span>' + timeAgo(c.date) + '</span> <span>&middot;</span> <span style="font-family:monospace">' + c.sha.slice(0,7) + '</span>' +
-                '<button class="btn btn-sm" style="font-size:10px;padding:1px 6px;margin-left:6px" onclick="toggleCommitComment(\'' + c.sha + '\')">Comment</button>' +
-              '</div>' +
-              '<div id="commitComments_' + c.sha + '" style="margin-top:3px"></div>' +
-              '<div id="commitCommentForm_' + c.sha + '" style="display:none;margin-top:4px">' +
-                '<div style="display:flex;gap:4px">' +
-                  '<input class="form-input" id="commentInput_' + c.sha + '" placeholder="Write feedback on this commit..." style="flex:1;font-size:11px;padding:4px 8px">' +
-                  '<button class="btn btn-primary btn-sm" style="font-size:10px" onclick="addCommitComment(\'' + c.sha + '\')">Send</button>' +
-                '</div>' +
-              '</div>' +
-            '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('') +
-      '</div>';
-
-    commits.forEach(c => loadCommitComments(c.sha, projectId));
-  } catch {}
-}
-
-async function loadCommitComments(sha, projectId) {
-  try {
-    const comments = await get('/api/github/commits/' + projectId + '/' + sha + '/comments');
-    const container = document.getElementById('commitComments_' + sha);
-    if (!container || !comments.length) return;
-    container.innerHTML = comments.map(c => `
-      <div style="padding:6px 8px;margin-top:4px;background:var(--primary-lighter);border-radius:4px;font-size:12px">
-        <div style="display:flex;align-items:center;gap:4px;margin-bottom:2px">
-          ${c.authorAvatar ? '<img src="' + c.authorAvatar + '" style="width:16px;height:16px;border-radius:50%">' : ''}
-          <strong style="font-size:11px;color:var(--primary)">${c.author}</strong>
-          <span style="font-size:10px;color:var(--text-muted)">${timeAgo(c.createdAt)}</span>
-        </div>
-        <div style="color:var(--text-secondary)">${c.body.replace(/\n— Comment from KV PTA Management$/, '')}</div>
-      </div>
-    `).join('');
-  } catch {}
-}
-
-function toggleCommitComment(sha) {
-  const form = document.getElementById('commitCommentForm_' + sha);
-  form.style.display = form.style.display === 'none' ? 'block' : 'none';
-  if (form.style.display === 'block') document.getElementById('commentInput_' + sha).focus();
-}
-
-async function addCommitComment(sha) {
-  const input = document.getElementById('commentInput_' + sha);
-  if (!input.value.trim()) return;
-  try {
-    await post('/api/github/commits/' + currentProjectId + '/' + sha + '/comments', { body: input.value });
-    input.value = '';
-    document.getElementById('commitCommentForm_' + sha).style.display = 'none';
-    loadCommitComments(sha, currentProjectId);
-  } catch (e) { alert(e.message); }
-}
-
-/* Comment & Chat */
-
-async function loadTeacherComments() {
-  if (!currentProjectId) return;
-  try {
-    const comments = await get('/api/teacher/projects/' + currentProjectId + '/comments');
-    const list = document.getElementById('teacherChatList');
-    if (!list) return;
-    if (!comments.length) {
-      list.innerHTML = '<p style="color:var(--text-muted);font-size:13px">No messages yet.</p>';
-    } else {
-      list.innerHTML = comments.map(c =>
-        '<div style="padding:6px 8px;margin-bottom:4px;background:var(--bg-card);border:1px solid var(--border-light);border-radius:6px;font-size:13px">' +
-          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">' +
-            '<strong style="color:var(--primary);font-size:12px">' + c.author_name + '</strong>' +
-            '<span style="font-size:10px;color:var(--text-muted)">' + new Date(c.created_at).toLocaleString() + '</span>' +
-          '</div>' +
-          '<div style="color:var(--text-secondary)">' + escapeHtml(c.content) + '</div>' +
-        '</div>'
-      ).join('');
-      list.scrollTop = list.scrollHeight;
-    }
-  } catch {}
-}
-
-async function addTeacherChatComment() {
-  if (!currentProjectId) return;
-  const input = document.getElementById('teacherChatInput');
-  if (!input.value.trim()) return;
-  try {
-    await post('/api/teacher/projects/' + currentProjectId + '/comments', { content: input.value });
-    input.value = '';
-    loadTeacherComments();
-  } catch (e) { alert(e.message); }
-}
-
-/* Init */
-window.addEventListener('hashchange', load);
 load();
-setInterval(loadTeacherComments, 5000);
-</script>
-
-<div id="photoLightbox" class="photo-lightbox" onclick="if(event.target===this)closeLightbox()">
-  <button class="photo-lightbox-close" onclick="closeLightbox()" title="Close">&times;</button>
-  <button class="photo-lightbox-nav prev" onclick="lightboxPrev()" title="Previous">&lsaquo;</button>
-  <div class="photo-lightbox-stage">
-    <img id="lightboxImg" src="" alt="">
-    <div id="lightboxCaption" class="photo-lightbox-caption"></div>
-    <div id="lightboxCounter" class="photo-lightbox-counter"></div>
-  </div>
-  <button class="photo-lightbox-nav next" onclick="lightboxNext()" title="Next">&rsaquo;</button>
-</div>
-
-<script>
-document.addEventListener('keydown', function(e) {
-  const lb = document.getElementById('photoLightbox');
-  if (!lb || !lb.classList.contains('open')) return;
-  if (e.key === 'Escape') closeLightbox();
-  else if (e.key === 'ArrowLeft') lightboxPrev();
-  else if (e.key === 'ArrowRight') lightboxNext();
-});
 </script>
 </body>
 </html>

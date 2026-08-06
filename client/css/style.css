@@ -171,6 +171,39 @@ body.sidebar-expanded .nav-item.active .nav-label {
 
 body.sidebar-expanded .nav-item .nav-tooltip { display: none; }
 
+/* ===== TABS ===== */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.tab {
+  padding: 10px 16px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab:hover { color: var(--primary); }
+
+.tab.tab-active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.tab-panel { display: none; }
+
+.tab-panel.tab-panel-active { display: block; }
+
 /* ===== MAIN LAYOUT ===== */
 .main-content { margin-left: var(--sidebar-width); min-height: 100vh; }
 
