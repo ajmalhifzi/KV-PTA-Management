@@ -189,7 +189,7 @@ async function load() {
     const label = labels[key] || d.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' });
     return `
       <div style="font-weight:700;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 6px">${label}</div>
-      ${groups[key].map(m => renderMeetingCard(m)).join('')}
+      <div class="timeline">${groups[key].map(m => renderMeetingCard(m)).join('')}</div>
     `;
   }).join('');
 }
@@ -277,22 +277,25 @@ function renderMeetingCard(m) {
   const nextDate = m.next_meeting ? fmtDatetime(m.next_meeting) : null;
   const studentNames = m.students && m.students.length ? m.students.map(s => s.full_name).join(', ') : '';
   return `
-    <div style="border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;margin-bottom:8px">
-      <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
-        <div style="flex:1;min-width:0">
-          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-weight:600;font-size:14px;color:var(--text-primary)">${m.group_name}</span>
-            <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Group</span>
-            ${studentNames ? '<span style="font-size:11px;color:var(--text-muted)">' + studentNames + '</span>' : ''}
-            <span style="font-size:11px;color:var(--text-secondary)">${meetingTime}</span>
+    <div class="timeline-item">
+      <div class="timeline-dot"></div>
+      <div style="border:1.5px solid var(--border);border-radius:8px;padding:12px 16px">
+        <div style="display:flex;justify-content:space-between;align-items:start;gap:8px">
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+              <span style="font-weight:600;font-size:14px;color:var(--text-primary)">${m.group_name}</span>
+              <span class="badge badge-blue" style="font-size:9px;padding:1px 6px">Group</span>
+              ${studentNames ? '<span style="font-size:11px;color:var(--text-muted)">' + studentNames + '</span>' : ''}
+              <span style="font-size:11px;color:var(--text-secondary)">${meetingTime}</span>
+            </div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
+            ${m.action_items ? '<div style="font-size:12px;color:var(--primary);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}
+            ${nextDate ? '<div style="font-size:11px;color:var(--text-secondary)">Next meeting: ' + nextDate + '</div>' : ''}
           </div>
-          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;white-space:pre-wrap">${m.notes}</div>
-          ${m.action_items ? '<div style="font-size:12px;color:var(--primary);margin-bottom:4px"><strong>Action:</strong> ' + m.action_items + '</div>' : ''}
-          ${nextDate ? '<div style="font-size:11px;color:var(--text-secondary)">Next meeting: ' + nextDate + '</div>' : ''}
-        </div>
-        <div style="display:flex;gap:4px;flex-shrink:0">
-          <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border)" onclick="editMeeting('${m.id}')">Edit</button>
-          <button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light)" onclick="confirmDelete('${m.id}')">Delete</button>
+          <div style="display:flex;gap:4px;flex-shrink:0">
+            <button class="btn btn-sm" style="background:var(--bg-card);border:1px solid var(--border)" onclick="editMeeting('${m.id}')">Edit</button>
+            <button class="btn btn-sm" style="background:var(--bg-card);color:var(--red);border:1px solid var(--red-light)" onclick="confirmDelete('${m.id}')">Delete</button>
+          </div>
         </div>
       </div>
     </div>
