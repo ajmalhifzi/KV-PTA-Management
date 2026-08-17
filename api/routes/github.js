@@ -4,37 +4,48 @@ const { authenticate, authorize } = require('../middleware/auth');
 const { createNotification } = require('./notifications');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const rateLimit = require('express-rate-limit');
 
 const router = Router();
 
-router.get('/login', (req, res) => {
+const githubLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: { error: 'Too many GitHub OAuth attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.get('/login', githubLimiter, (req, res) => {
   const token = req.query.token;
-  if (!token) return res.redirect(process.env.FRONTEND_URL + '/login.html');
+  const frontendUrl = process.env.FRONTEND_URL || '';
+  if (!token) return res.redirect(frontendUrl + '/login.html');
 
   try {
-    const user = jwt.verify(token, process.env.JWT_SECRET);
+    const user = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'] });
     const state = jwt.sign(
       { userId: user.id, nonce: crypto.randomUUID() },
       process.env.JWT_SECRET,
-      { expiresIn: '10m' }
+      { algorithm: 'HS256', expiresIn: '10m' }
     );
-    const redirectUri = process.env.GITHUB_REDIRECT_URL;
+    const redirectUri = process.env.GITHUB_REDIRECT_URL || '';
     const url = `https://github.com/login/oauth/authorize?client_id=${process.env.GITHUB_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=repo`;
     res.redirect(url);
   } catch {
-    return res.redirect(process.env.FRONTEND_URL + '/login.html');
+    return res.redirect(frontendUrl + '/login.html');
   }
 });
 
-router.get('/callback', async (req, res) => {
+router.get('/callback', githubLimiter, async (req, res) => {
   const { code, state } = req.query;
-  if (!code || !state) return res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=error');
+  const frontendUrl = process.env.FRONTEND_URL || '';
+  if (!code || !state) return res.redirect(frontendUrl + '/student/projects.html?github=error');
 
   let payload;
   try {
-    payload = jwt.verify(state, process.env.JWT_SECRET);
+    payload = jwt.verify(state, process.env.JWT_SECRET, { algorithms: ['HS256'] });
   } catch {
-    return res.redirect(process.env.FRONTEND_URL + '/student/projects.html?github=error');
+    return res.redirect(frontendUrl + '/student/projects.html?github=error');
   }
 
   try {

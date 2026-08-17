@@ -311,6 +311,12 @@ router.post('/uploads', async (req, res) => {
   if (!file_name) return res.status(400).json({ error: 'file_name required' });
   if (!file_data) return res.status(400).json({ error: 'file_data required' });
 
+  if (typeof file_data === 'string' && file_data.length > 14 * 1024 * 1024) {
+    return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+  }
+
+  const safeFileName = String(file_name).replace(/[^a-zA-Z0-9._-]/g, '_');
+
   const project = await pool.query(`
     SELECT p.id FROM projects p
     JOIN teacher_student_assignments tsa ON tsa.group_id = p.group_id
@@ -320,7 +326,7 @@ router.post('/uploads', async (req, res) => {
 
   const { rows } = await pool.query(
     'INSERT INTO project_uploads (project_id, student_id, file_name, file_data, file_type, category) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
-    [project.rows[0].id, req.user.id, file_name, file_data, file_type || null, category || 'supplementary']
+    [project.rows[0].id, req.user.id, safeFileName, file_data, file_type || null, category || 'supplementary']
   );
 
   const { rows: uploadTeachers } = await pool.query(
@@ -333,7 +339,7 @@ router.post('/uploads', async (req, res) => {
       userId: uploadTeachers[0].teacher_id,
       type: 'upload',
       title: 'New File Submitted',
-      message: 'Your student uploaded: ' + file_name,
+      message: 'Your student uploaded: ' + safeFileName,
       relatedUrl: '/teacher/uploads.html'
     });
   }

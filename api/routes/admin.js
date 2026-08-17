@@ -109,13 +109,13 @@ router.post('/assign-bulk', async (req, res) => {
       }
       await client.query('COMMIT');
       res.json({ message: `${assignments.length} assignments saved` });
-    } catch {
+    } catch (err) {
       await client.query('ROLLBACK');
       throw err;
     } finally {
       client.release();
     }
-  } catch {
+  } catch (err) {
     res.status(500).json({ error: 'Bulk assignment failed' });
   }
 });
@@ -253,13 +253,13 @@ router.post('/seed-fyp', async (req, res) => {
       }
       await client.query('COMMIT');
       res.json({ message: `${data.length} records seeded` });
-    } catch {
+    } catch (err) {
       await client.query('ROLLBACK');
       throw err;
     } finally {
       client.release();
     }
-  } catch {
+  } catch (err) {
     res.status(500).json({ error: 'Seeding failed' });
   }
 });

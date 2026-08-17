@@ -6,7 +6,7 @@ function getToken() { return localStorage.getItem('token'); }
 
 function requireAuth() {
   const user = getUser();
-  if (!user) window.location.href = '/';
+  if (!user) window.location.href = window.location.protocol === 'file:' ? 'http://127.0.0.1:4000/' : '/';
   return user;
 }
 
@@ -18,5 +18,5 @@ function redirectByRole(role) {
 function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  window.location.href = '/';
+  window.location.href = window.location.protocol === 'file:' ? 'http://127.0.0.1:4000/' : '/';
 }

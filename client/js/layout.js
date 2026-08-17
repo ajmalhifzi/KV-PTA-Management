@@ -64,10 +64,11 @@ function renderSidebar() {
   const sidebar = document.getElementById('sidebar');
   sidebar.innerHTML = `
     <div class="sidebar-logo">
-      <svg viewBox="0 0 28 28" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="4" y="4" width="20" height="20" rx="4" stroke="var(--primary)"/>
-        <path d="M10 14l3 3 5-6" stroke="var(--primary)"/>
+      <svg viewBox="0 0 32 32" fill="none" width="32" height="32">
+        <rect x="2" y="2" width="28" height="28" rx="6" fill="var(--primary-light)" stroke="var(--primary)" stroke-width="1.5"/>
+        <path d="M10 16l4 4 8-10" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
+      <span class="nav-label" style="font-size:14px;font-weight:600;color:var(--text-primary)">KV PTA</span>
     </div>
     <nav class="sidebar-nav">
       ${navItems.map(item => {
@@ -82,16 +83,23 @@ function renderSidebar() {
       }).join('')}
     </nav>
     <div class="sidebar-footer">
-      <a class="nav-item" onclick="logout()">
+      <a class="nav-item" onclick="logout()" style="cursor:pointer">
         ${ICONS['log-out']}
         <span class="nav-label">Logout</span>
       </a>
-      <a class="nav-item" onclick="toggleSidebar()" title="Collapse / Expand">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/></svg>
+      <a class="nav-item" onclick="toggleSidebar()" title="Collapse / Expand" style="cursor:pointer">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
         <span class="nav-label">Collapse</span>
       </a>
     </div>
   `;
+
+  if (!document.querySelector('.mobile-nav-scrim')) {
+    const scrim = document.createElement('div');
+    scrim.className = 'mobile-nav-scrim';
+    scrim.onclick = toggleMobileNav;
+    document.body.appendChild(scrim);
+  }
 }
 
 function toggleSidebar() {
@@ -100,12 +108,19 @@ function toggleSidebar() {
   localStorage.setItem('kvSidebar', expanded ? 'collapsed' : 'expanded');
 }
 
+function toggleMobileNav() {
+  document.body.classList.toggle('mobile-nav-open');
+}
+
+function closeMobileNav() {
+  document.body.classList.remove('mobile-nav-open');
+}
+
 function renderHeader(title) {
   const user = getUser();
   const header = document.getElementById('header');
-  const initials = user ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : '??';
-  const firstName = user ? user.full_name : 'User';
-
+  const initials = user ? escapeHtml(user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)) : '??';
+  const firstName = user ? escapeHtml(user.full_name.split(' ')[0]) : 'User';
   const hour = new Date().getHours();
   let greeting = 'Hello';
   if (hour < 12) greeting = 'Good morning';
@@ -114,31 +129,37 @@ function renderHeader(title) {
 
   header.innerHTML = `
     <div class="header-left">
-      <div class="header-subtitle" style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-label);margin-bottom:2px">${title}</div>
-      <div class="header-greeting">${greeting}, ${firstName}!</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="icon-btn mobile-menu-button" onclick="toggleMobileNav()" title="Open navigation" aria-label="Open navigation">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </button>
+        <div>
+          <div class="header-subtitle">Workspace / ${escapeHtml(title)}</div>
+          <div class="header-greeting">${greeting}, ${firstName}</div>
+        </div>
+      </div>
     </div>
     <div class="header-right">
-      <div class="search-bar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" placeholder="Search..." readonly>
-      </div>
       <div class="notif-container">
-        <button class="icon-btn" onclick="toggleNotif()">
+        <button class="icon-btn" onclick="toggleNotif()" title="Notifications">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           <span class="notif-badge" id="notifBadge" style="display:none">0</span>
         </button>
         <div class="notif-dropdown" id="notifDropdown" style="display:none">
           <div class="notif-header">
             <span>Notifications</span>
-            <button class="btn btn-sm btn-ghost" onclick="markAllRead()" style="font-size:10px;padding:2px 8px">Mark all read</button>
+            <button class="btn btn-sm btn-ghost" onclick="markAllRead()">Mark all read</button>
           </div>
           <div class="notif-list" id="notifList"></div>
         </div>
       </div>
-      <button class="icon-btn" onclick="openChat()" title="Messages">
+      <button class="icon-btn" onclick="openChat()" title="Comments">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </button>
-      <div class="user-avatar">${initials}</div>
+      <div class="user-avatar" title="${user ? escapeHtml(user.full_name) : 'User'}" style="position:relative">
+        ${initials}
+        <span style="position:absolute;bottom:0;right:0;width:10px;height:10px;background:#10b981;border-radius:50%;border:2px solid var(--bg-page)"></span>
+      </div>
     </div>
   `;
   loadNotifCount();
@@ -155,7 +176,7 @@ function openChat() {
   if (user.role === 'student') {
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get('project');
-    if (id) window.location.href = '/student/project.html?project=' + id;
+    if (id) window.location.href = '/student/project.html?project=' + encodeURIComponent(id);
     else window.location.href = '/student/projects.html';
   }
   else if (user.role === 'teacher') {
@@ -198,11 +219,11 @@ async function loadNotifList() {
       return;
     }
     list.innerHTML = notifs.map(n => `
-      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="clickNotif('${n.id}','${n.related_url || ''}')">
+      <div class="notif-item ${n.is_read ? '' : 'unread'}" onclick="clickNotif('${escapeHtml(n.id)}','${escapeHtml(n.related_url || '')}')">
         <div class="notif-icon">${NOTIFICATION_ICONS[n.type] || NOTIFICATION_ICONS.comment}</div>
         <div class="notif-body">
-          <div class="notif-title">${n.title}</div>
-          ${n.message ? '<div class="notif-msg">' + n.message + '</div>' : ''}
+          <div class="notif-title">${escapeHtml(n.title)}</div>
+          ${n.message ? '<div class="notif-msg">' + escapeHtml(n.message) + '</div>' : ''}
           <div class="notif-time">${timeAgo(n.created_at)}</div>
         </div>
         ${n.is_read ? '' : '<div class="notif-dot"></div>'}

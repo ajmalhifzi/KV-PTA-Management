@@ -9,4 +9,8 @@ dist/
 .vercel/
 .vercel
 .env*
+!.env.example
+.npm-cache/
 reference_image/
+
+

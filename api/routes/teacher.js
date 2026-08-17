@@ -185,6 +185,12 @@ router.post('/upload-for-group', async (req, res) => {
   if (!file_name) return res.status(400).json({ error: 'file_name required' });
   if (!file_data) return res.status(400).json({ error: 'file_data required' });
 
+  if (typeof file_data === 'string' && file_data.length > 14 * 1024 * 1024) {
+    return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+  }
+
+  const safeFileName = String(file_name).replace(/[^a-zA-Z0-9._-]/g, '_');
+
   const group = await pool.query(
     'SELECT id FROM groups WHERE id = $1 AND teacher_id = $2',
     [group_id, req.user.id]
@@ -199,7 +205,7 @@ router.post('/upload-for-group', async (req, res) => {
 
   const { rows } = await pool.query(
     'INSERT INTO project_uploads (project_id, student_id, teacher_id, file_name, file_data, file_type, category) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *',
-    [project.rows[0].id, req.user.id, req.user.id, file_name, file_data, file_type || null, category || 'supplementary']
+    [project.rows[0].id, req.user.id, req.user.id, safeFileName, file_data, file_type || null, category || 'supplementary']
   );
 
   const { rows: uploadStudents } = await pool.query(
@@ -211,7 +217,7 @@ router.post('/upload-for-group', async (req, res) => {
       userId: s.student_id,
       type: 'upload',
       title: 'New File Uploaded',
-      message: 'Your teacher uploaded: ' + file_name,
+      message: 'Your teacher uploaded: ' + safeFileName,
       relatedUrl: '/student/teacher-uploads.html'
     });
   }
@@ -232,9 +238,15 @@ router.post('/resources', async (req, res) => {
   if (!title) return res.status(400).json({ error: 'Title required' });
   if (!file_data) return res.status(400).json({ error: 'file_data required' });
 
+  if (typeof file_data === 'string' && file_data.length > 14 * 1024 * 1024) {
+    return res.status(400).json({ error: 'Resource file too large. Maximum size is 10MB.' });
+  }
+
+  const safeTitle = String(title).trim();
+
   const { rows } = await pool.query(
     'INSERT INTO resource_files (teacher_id, title, file_data, file_type) VALUES ($1, $2, $3, $4) RETURNING *',
-    [req.user.id, title, file_data, file_type || null]
+    [req.user.id, safeTitle, file_data, file_type || null]
   );
 
   const { rows: resourceStudents } = await pool.query(
@@ -246,7 +258,7 @@ router.post('/resources', async (req, res) => {
       userId: s.student_id,
       type: 'resource',
       title: 'New Resource Available',
-      message: 'Your teacher shared: ' + title,
+      message: 'Your teacher shared: ' + safeTitle,
       relatedUrl: '/student/teacher-uploads.html'
     });
   }
@@ -316,10 +328,7 @@ router.put('/meetings/:id', async (req, res) => {
   if (!meeting_date) return res.status(400).json({ error: 'meeting_date required' });
   if (!notes) return res.status(400).json({ error: 'notes required' });
 
-  let extraSet = '';
-  const params = [meeting_date, notes, action_items || null, next_meeting || null];
-  let idx = 5;
-
+  let targetProjectId = null;
   if (group_id) {
     const group = await pool.query(
       'SELECT id FROM groups WHERE id = $1 AND teacher_id = $2',
@@ -332,20 +341,18 @@ router.put('/meetings/:id', async (req, res) => {
       [group_id]
     );
     if (!project.rows.length) return res.status(404).json({ error: 'Group has no project' });
-
-    extraSet = ', project_id = $' + (idx++) + ' ';
-    params.push(project.rows[0].id);
+    targetProjectId = project.rows[0].id;
   }
 
-  params.push(req.user.id, id);
-
   const { rowCount, rows } = await pool.query(`
-    UPDATE meeting_logs ml SET meeting_date = $1, notes = $2, action_items = $3, next_meeting = $4, updated_at = NOW()` + extraSet + `
+    UPDATE meeting_logs ml
+    SET meeting_date = $1, notes = $2, action_items = $3, next_meeting = $4,
+        project_id = COALESCE($5, ml.project_id), updated_at = NOW()
     FROM projects p
-    JOIN groups g ON g.id = p.group_id AND g.teacher_id = $` + (idx++) + `
-    WHERE ml.id = $` + (idx) + ` AND ml.project_id = p.id
+    JOIN groups g ON g.id = p.group_id
+    WHERE ml.id = $6 AND ml.project_id = p.id AND g.teacher_id = $7
     RETURNING ml.*
-  `, params);
+  `, [meeting_date, notes, action_items || null, next_meeting || null, targetProjectId, id, req.user.id]);
 
   if (!rowCount) return res.status(404).json({ error: 'Meeting log not found' });
   res.json(rows[0]);
@@ -364,3 +371,4 @@ router.delete('/meetings/:id', async (req, res) => {
 });
 
 module.exports = router;
+

@@ -1,11 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard - KV PTA Management</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link rel="stylesheet" href="/css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet"><link rel="stylesheet" href="/css/style.css">
+<script>if (window.location.protocol === 'file:') window.location.replace('http://127.0.0.1:4000/');</script>
 </head>
 <body>
 <div id="sidebar" class="sidebar"></div>
@@ -17,6 +19,10 @@
       <div class="skeleton skeleton-stat"></div>
       <div class="skeleton skeleton-stat"></div>
       <div class="skeleton skeleton-stat"></div>
+    </div>
+    <div class="dashboard-grid" id="dashboardOverview" style="display:none">
+      <section class="card dashboard-panel" id="projectOverview"></section>
+      <section class="card dashboard-panel dashboard-panel--accent" id="nextMeeting"></section>
     </div>
     <div id="activityCard" class="card-accent" style="margin-bottom:16px;display:none">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
@@ -105,7 +111,54 @@ async function load() {
     </div>
   `;
 
+  renderOverview(project, group, meetings, comments);
+
   renderActivity(meetings, comments, notifs);
+}
+
+function renderOverview(project, group, meetings, comments) {
+  const overview = document.getElementById('dashboardOverview');
+  const projectPanel = document.getElementById('projectOverview');
+  const meetingPanel = document.getElementById('nextMeeting');
+  if (!project && !group && !meetings.length) {
+    overview.style.display = 'none';
+    return;
+  }
+
+  const status = project?.status || 'draft';
+  const statusClass = STATUS_BADGE[status] || 'badge-gray';
+  const statusLabel = status === 'revision' ? 'Needs revision' : status;
+  const progress = status === 'approved' ? 100 : status === 'submitted' ? 72 : status === 'revision' ? 50 : project ? 28 : 0;
+  const projectTitle = project?.title || 'Project workspace';
+  const projectCopy = project?.objective || project?.purpose || 'Your assigned project will appear here once the workspace is ready.';
+  const next = meetings[0];
+  const meetingDate = next?.meeting_date ? new Date(next.meeting_date) : null;
+  const dateLabel = meetingDate ? meetingDate.toLocaleDateString('en-MY', { day: '2-digit', month: 'short' }).toUpperCase() : 'NO DATE';
+  const meetingTime = next?.meeting_time || (meetingDate ? meetingDate.toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit' }) : 'Schedule with your teacher');
+
+  overview.style.display = 'grid';
+  projectPanel.innerHTML = `
+    <div class="panel-eyebrow">Project at a glance</div>
+    <span class="badge ${statusClass}">${escapeHtml(statusLabel)}</span>
+    <h2 class="panel-title" style="margin-top:14px">${escapeHtml(projectTitle)}</h2>
+    <p class="panel-copy">${escapeHtml(projectCopy)}</p>
+    <div style="display:flex;justify-content:space-between;gap:12px;margin:24px 0 8px">
+      <span class="panel-eyebrow" style="margin:0">Project progress</span>
+      <span class="panel-meta">${progress}% complete</span>
+    </div>
+    <div class="progress-bar"><span style="width:${progress}%"></span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:20px">
+      <span class="panel-meta">${comments.length} feedback item${comments.length === 1 ? '' : 's'}</span>
+      <a href="/student/project.html${project?.id ? '?project=' + encodeURIComponent(project.id) : ''}" class="btn btn-soft btn-sm">Open project</a>
+    </div>
+  `;
+  meetingPanel.innerHTML = `
+    <div class="panel-eyebrow">Next supervision</div>
+    <div style="font-size:30px;font-weight:600;line-height:1.2;margin:8px 0 16px">${dateLabel}</div>
+    <div class="panel-copy">${escapeHtml(meetingTime)}</div>
+    <div class="panel-copy" style="margin-top:10px">${escapeHtml(next?.teacher_name || 'Your teacher')}</div>
+    <div style="margin-top:30px"><a href="/student/meetings.html" class="btn btn-secondary btn-sm">View meeting logs</a></div>
+  `;
 }
 
 function renderActivity(meetings, comments, notifs) {

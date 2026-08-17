@@ -1,7 +1,7 @@
-const API_BASE = window.location.origin;
+const API_BASE = typeof window !== 'undefined' ? window.location.origin : '';
 
 async function api(path, options = {}) {
-  const token = localStorage.getItem('token');
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null;
   const headers = { 'Content-Type': 'application/json', ...options.headers };
   if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -10,12 +10,15 @@ async function api(path, options = {}) {
 
   try {
     const res = await fetch(`${API_BASE}${path}`, { ...options, headers, signal: controller.signal });
-    const data = await res.json();
+    const responseText = await res.text();
+    let data;
+    try { data = responseText ? JSON.parse(responseText) : {}; }
+    catch { data = { error: 'The server returned an unexpected response.' }; }
     if (!res.ok) {
-      if (res.status === 401) {
+      if (res.status === 401 && typeof localStorage !== 'undefined') {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
-        window.location.href = '/';
+        if (typeof window !== 'undefined') window.location.href = '/';
       }
       throw new Error(data.error || 'Request failed');
     }
@@ -37,6 +40,22 @@ async function getSupabaseConfig() {
   return _supabaseConfig;
 }
 
-function sanitizeFileName(name) {
-  return Date.now() + '_' + name.replace(/[^a-zA-Z0-9._-]/g, '_');
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
+
+function sanitizeFileName(name) {
+  return Date.now() + '_' + String(name).replace(/[^a-zA-Z0-9._-]/g, '_');
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { escapeHtml, sanitizeFileName };
+}
+
+

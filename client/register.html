@@ -3,8 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Register - KV PTA Management</title>
-<script src="https://cdn.tailwindcss.com"></script>
+<title>KV PTA Management — Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -34,20 +36,6 @@
           <label class="form-label">Password</label>
           <input class="form-input" id="password" type="password" placeholder="Create a password" autocomplete="new-password">
         </div>
-        <div class="form-group">
-          <label class="form-label">Role</label>
-          <div class="segmented" id="roleSeg">
-            <button type="button" class="segmented-btn active" data-role="student" onclick="selectRole('student')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              Student
-            </button>
-            <button type="button" class="segmented-btn" data-role="teacher" onclick="selectRole('teacher')">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              Teacher
-            </button>
-          </div>
-          <input type="hidden" id="role" value="student">
-        </div>
         <div id="errorMsg" style="color:var(--red);font-size:13px;margin-bottom:12px;display:none"></div>
         <button class="btn btn-primary" onclick="handleRegister()">Create Account</button>
         <div class="login-footer">
@@ -66,22 +54,16 @@
 const user = getUser();
 if (user) { redirectByRole(user.role); }
 
-function selectRole(role) {
-  document.querySelectorAll('#roleSeg .segmented-btn').forEach(b => b.classList.toggle('active', b.dataset.role === role));
-  document.getElementById('role').value = role;
-}
-
 async function handleRegister() {
   const full_name = document.getElementById('full_name').value;
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
-  const role = document.getElementById('role').value;
   const err = document.getElementById('errorMsg');
 
   if (!full_name || !email || !password) { err.textContent = 'Please fill in all fields'; err.style.display = 'block'; return; }
 
   try {
-    const data = await post('/api/auth/register', { full_name, email, password, role });
+    const data = await post('/api/auth/register', { full_name, email, password });
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     redirectByRole(data.user.role);
