@@ -163,3 +163,30 @@ CREATE INDEX idx_resource_files_teacher_id ON resource_files(teacher_id);
 CREATE INDEX idx_project_uploads_project_id ON project_uploads(project_id);
 CREATE INDEX idx_teacher_student_assignments_teacher_id ON teacher_student_assignments(teacher_id);
 CREATE INDEX idx_error_logs_created_at ON error_logs(created_at DESC);
+
+-- SECURITY HARDENING (P0 Incident Remediation):
+-- 1. Enable RLS on all public tables to prevent unauthorized access via Supabase Data API / PostgREST
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE teacher_student_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE comments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resource_files ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_uploads ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_photos ENABLE ROW LEVEL SECURITY;
+ALTER TABLE error_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE meeting_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE old_fyp_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE github_connections ENABLE ROW LEVEL SECURITY;
+
+-- 2. Revoke all privileges from anon and authenticated roles on existing public objects
+REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public FROM anon, authenticated;
+REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA public FROM anon, authenticated;
+
+-- 3. Configure default privileges for future objects created by postgres in public schema
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON TABLES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON SEQUENCES FROM anon, authenticated;
+ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public REVOKE ALL ON FUNCTIONS FROM anon, authenticated;
+
