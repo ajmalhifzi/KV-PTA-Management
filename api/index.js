@@ -27,17 +27,17 @@ app.use(helmet({
   crossOriginEmbedderPolicy: false,
 }));
 
-// Phase 8: Restricted CORS
+const defaultOrigins = ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:4000', 'http://127.0.0.1:4000'];
 const allowedOrigins = process.env.FRONTEND_URL
-  ? process.env.FRONTEND_URL.split(',').map(s => s.trim())
-  : ['http://localhost:3000', 'http://127.0.0.1:3000', 'http://localhost:4000', 'http://127.0.0.1:4000'];
+  ? [...process.env.FRONTEND_URL.split(',').map(s => s.trim()), ...defaultOrigins]
+  : defaultOrigins;
 
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, false);
     }
   },
   credentials: true,
