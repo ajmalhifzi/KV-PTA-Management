@@ -302,3 +302,13 @@ describe('9. CORS Enforcement', () => {
     assert.notStrictEqual(res.headers['access-control-allow-origin'], 'http://malicious-attacker.com');
   });
 });
+
+// 10. Google Verification File
+describe('10. Google Verification File Access', () => {
+  it('Public unauthenticated request to /googlec3fe8f4c38db2e02.html returns HTTP 200 and exact content', async () => {
+    const res = await request('/googlec3fe8f4c38db2e02.html');
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.trim(), 'google-site-verification: googlec3fe8f4c38db2e02.html');
+  });
+});
+
